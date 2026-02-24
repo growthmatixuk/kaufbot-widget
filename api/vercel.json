@@ -1,0 +1,8 @@
+{
+  "routes": [
+    {
+      "src": "/kaufbot-widget.js",
+      "dest": "/kaufbot-widget.js"
+    }
+  ]
+}
