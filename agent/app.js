@@ -19,58 +19,28 @@
     }
 
     call = window.Daily.createCallObject();
-      showLeaveButton: false,
-      showFullscreenButton: false,
-      iframeStyle: {
-        width: "100%",
-        height: "100%",
-        border: "0",
-        borderRadius: "18px"
-      }
-    });
 
-    await call.join({
-      url: data.conversation_url,
-      token: data.meeting_token,
-      startVideoOff: true,
-      startAudioOff: false
-    });
+await call.join({
+  url: data.conversation_url,
+  token: data.meeting_token,
+  startVideoOff: true,
+  startAudioOff: false
+});
 
-    if (loading) loading.remove();
+// create video element for KaufBot
+const videoEl = document.createElement("video");
+videoEl.autoplay = true;
+videoEl.playsInline = true;
+videoEl.style.width = "100%";
+videoEl.style.height = "100%";
+videoEl.style.objectFit = "cover";
 
-    // best-effort cleanup of some prebuilt chrome
-    try {
-      call.setShowParticipantsBar(false);
-      call.setShowLocalVideo(false);
-    } catch (e) {
-      console.warn("Could not hide some Daily UI elements", e);
-    }
+stage.innerHTML = "";
+stage.appendChild(videoEl);
 
-  } catch (err) {
-    console.error(err);
-    loading.textContent = "Could not start KaufBot.";
+// listen for Tavus/KaufBot video track
+call.on("track-started", (ev) => {
+  if (ev.track.kind === "video" && ev.participant && !ev.participant.local) {
+    videoEl.srcObject = new MediaStream([ev.track]);
   }
-
-  micBtn.addEventListener("click", async () => {
-    if (!call) return;
-
-    micMuted = !micMuted;
-    await call.setLocalAudio(!micMuted);
-    micBtn.textContent = micMuted ? "Unmute mic" : "Mute mic";
-  });
-
-  endBtn.addEventListener("click", async () => {
-    if (call) {
-      try {
-        await call.leave();
-        call.destroy();
-      } catch (e) {
-        console.warn(e);
-      }
-    }
-
-    if (window.parent !== window) {
-      window.parent.postMessage({ type: "KAUFBOT_CLOSE" }, "*");
-    }
-  });
-})();
+});
