@@ -18,7 +18,7 @@
       throw new Error(data.error || "Failed to start KaufBot");
     }
 
-    call = window.Daily.createFrame(stage, {
+    call = window.Daily.createCallObject();
       showLeaveButton: false,
       showFullscreenButton: false,
       iframeStyle: {
