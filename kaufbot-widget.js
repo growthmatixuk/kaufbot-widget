@@ -30,10 +30,10 @@
 
     #kaufbot-floating-wrap {
       position: fixed;
-      right: 20px;
-      bottom: 90px;
-      width: 340px;
-      height: 620px;
+      right: 12px;
+      bottom: 12px;
+      width: 520px;
+      height: 760px;
       z-index: 999998;
       display: none;
       pointer-events: none;
@@ -56,15 +56,15 @@
 
     #kaufbot-close {
       position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 36px;
-      height: 36px;
+      top: 18px;
+      right: 18px;
+      width: 42px;
+      height: 42px;
       border: 0;
       border-radius: 999px;
-      background: rgba(0,0,0,.75);
+      background: rgba(0,0,0,.78);
       color: #fff;
-      font-size: 18px;
+      font-size: 20px;
       cursor: pointer;
       z-index: 3;
       pointer-events: auto;
@@ -72,11 +72,11 @@
 
     #kaufbot-controls {
       position: absolute;
-      bottom: 8px;
+      bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
-      gap: 8px;
+      gap: 10px;
       z-index: 3;
       pointer-events: auto;
     }
@@ -84,8 +84,8 @@
     .kaufbot-mini-btn {
       border: 0;
       border-radius: 999px;
-      padding: 10px 14px;
-      background: rgba(0,0,0,.75);
+      padding: 12px 18px;
+      background: rgba(0,0,0,.78);
       color: #fff;
       cursor: pointer;
       font-weight: 600;
@@ -94,10 +94,19 @@
 
     @media (max-width: 768px) {
       #kaufbot-floating-wrap {
-        width: 260px;
-        height: 460px;
-        right: 10px;
-        bottom: 80px;
+        width: 320px;
+        height: 520px;
+        right: 8px;
+        bottom: 8px;
+      }
+
+      #kaufbot-close {
+        top: 12px;
+        right: 12px;
+      }
+
+      #kaufbot-controls {
+        bottom: 14px;
       }
     }
   `;
@@ -144,6 +153,11 @@
   }
 
   function closeKaufbot() {
+    const frame = document.getElementById("kaufbot-agent-frame");
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.postMessage({ type: "KAUFBOT_CLOSE_SELF" }, "*");
+    }
+
     wrap.style.display = "none";
     launcher.style.display = "block";
     shell.innerHTML = "";
@@ -163,13 +177,5 @@
       "*"
     );
     micBtn.textContent = micMuted ? "Unmute mic" : "Mute mic";
-  });
-
-  window.addEventListener("message", (event) => {
-    if (!event.data) return;
-
-    if (event.data.type === "KAUFBOT_CLOSE") {
-      closeKaufbot();
-    }
   });
 })();
