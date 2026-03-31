@@ -71,9 +71,9 @@
     if (frameWrapper.innerHTML !== "") return;
 
     try {
-      const response = await fetch("https://growthmatixuk-kaufbot-widget.vercel.app", {
-        method: "POST"
-      });
+      const response = await fetch("https://growthmatixuk-kaufbot-widget.vercel.app/api/conversation", {
+  method: "POST"
+})
 
       const data = await response.json();
 
