@@ -30,10 +30,10 @@
 
     #kaufbot-floating-wrap {
       position: fixed;
-      right: 12px;
-      bottom: 12px;
-      width: 520px;
-      height: 760px;
+      right: 24px;
+      bottom: 24px;
+      width: 300px;
+      height: 620px;
       z-index: 999998;
       display: none;
       pointer-events: none;
@@ -56,13 +56,13 @@
 
     #kaufbot-close {
       position: absolute;
-      top: 18px;
-      right: 18px;
-      width: 42px;
-      height: 42px;
+      top: 14px;
+      right: 6px;
+      width: 38px;
+      height: 38px;
       border: 0;
       border-radius: 999px;
-      background: rgba(0,0,0,.78);
+      background: rgba(0,0,0,.82);
       color: #fff;
       font-size: 20px;
       cursor: pointer;
@@ -72,11 +72,11 @@
 
     #kaufbot-controls {
       position: absolute;
-      bottom: 24px;
+      bottom: 18px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
-      gap: 10px;
+      gap: 8px;
       z-index: 3;
       pointer-events: auto;
     }
@@ -84,8 +84,8 @@
     .kaufbot-mini-btn {
       border: 0;
       border-radius: 999px;
-      padding: 12px 18px;
-      background: rgba(0,0,0,.78);
+      padding: 10px 16px;
+      background: rgba(0,0,0,.82);
       color: #fff;
       cursor: pointer;
       font-weight: 600;
@@ -94,19 +94,19 @@
 
     @media (max-width: 768px) {
       #kaufbot-floating-wrap {
-        width: 320px;
-        height: 520px;
-        right: 8px;
-        bottom: 8px;
-      }
-
-      #kaufbot-close {
-        top: 12px;
-        right: 12px;
+        width: 240px;
+        height: 500px;
+        right: 10px;
+        bottom: 10px;
       }
 
       #kaufbot-controls {
-        bottom: 14px;
+        bottom: 10px;
+      }
+
+      #kaufbot-close {
+        top: 8px;
+        right: 4px;
       }
     }
   `;
