@@ -4,6 +4,7 @@ export default async function handler(req, res) {
   "https://www.clickbackdrops.com",
   "https://staging.clickbackdrops.com"
   "https://clickbackdrops-ai-co-uk.stackstaging.com"
+ "https://www.clickbackdrops-ai-co-uk.stackstaging.com"
 ];
 
 const origin = req.headers.origin || "";
