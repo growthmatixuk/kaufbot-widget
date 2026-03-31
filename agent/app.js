@@ -1,12 +1,53 @@
 (async function () {
   const stage = document.getElementById("agent-stage");
   const loading = document.getElementById("agent-loading");
-  const micBtn = document.getElementById("mic-btn");
   const endBtn = document.getElementById("end-btn");
 
   let call;
+  let hiddenVideo;
+  let canvas;
+  let ctx;
+  let animationId;
   let micMuted = false;
-  let videoEl;
+
+  function startChromaKey() {
+    if (!hiddenVideo || !canvas || !ctx) return;
+
+    const draw = () => {
+      if (hiddenVideo.readyState >= 2) {
+        const videoWidth = hiddenVideo.videoWidth;
+        const videoHeight = hiddenVideo.videoHeight;
+
+        if (videoWidth && videoHeight) {
+          if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
+            canvas.width = videoWidth;
+            canvas.height = videoHeight;
+          }
+
+          ctx.drawImage(hiddenVideo, 0, 0, canvas.width, canvas.height);
+
+          const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = frame.data;
+
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+
+            if (g > 110 && g > r * 1.25 && g > b * 1.25) {
+              data[i + 3] = 0;
+            }
+          }
+
+          ctx.putImageData(frame, 0, 0);
+        }
+      }
+
+      animationId = requestAnimationFrame(draw);
+    };
+
+    draw();
+  }
 
   try {
     const response = await fetch("https://growthmatixuk-kaufbot-widget.vercel.app/api/conversation", {
@@ -21,17 +62,17 @@
 
     call = window.Daily.createCallObject();
 
-    // Create video element first
-    videoEl = document.createElement("video");
-    videoEl.autoplay = true;
-    videoEl.playsInline = true;
-    videoEl.muted = false;
-    videoEl.style.width = "100%";
-    videoEl.style.height = "100%";
-    videoEl.style.objectFit = "cover";
-    videoEl.style.display = "block";
+    hiddenVideo = document.createElement("video");
+    hiddenVideo.id = "agent-video-hidden";
+    hiddenVideo.autoplay = true;
+    hiddenVideo.playsInline = true;
+    hiddenVideo.muted = true;
 
-    // Listen for KaufBot remote video BEFORE joining
+    canvas = document.createElement("canvas");
+    canvas.id = "agent-canvas";
+
+    ctx = canvas.getContext("2d", { willReadFrequently: true });
+
     call.on("track-started", (ev) => {
       if (
         ev.track &&
@@ -39,12 +80,16 @@
         ev.participant &&
         !ev.participant.local
       ) {
-        videoEl.srcObject = new MediaStream([ev.track]);
+        hiddenVideo.srcObject = new MediaStream([ev.track]);
 
-        if (loading) loading.remove();
-        if (!stage.contains(videoEl)) {
-          stage.appendChild(videoEl);
-        }
+        stage.innerHTML = "";
+        stage.appendChild(hiddenVideo);
+        stage.appendChild(canvas);
+
+        hiddenVideo.onloadedmetadata = () => {
+          hiddenVideo.play();
+          startChromaKey();
+        };
       }
     });
 
@@ -55,6 +100,9 @@
       startAudioOff: false
     });
 
+    if (loading && stage.contains(loading)) {
+      loading.remove();
+    }
   } catch (err) {
     console.error(err);
     if (loading) {
@@ -62,15 +110,18 @@
     }
   }
 
-  micBtn.addEventListener("click", async () => {
-    if (!call) return;
+  window.addEventListener("message", async (event) => {
+    if (!event.data || !call) return;
 
-    micMuted = !micMuted;
-    await call.setLocalAudio(!micMuted);
-    micBtn.textContent = micMuted ? "Unmute mic" : "Mute mic";
+    if (event.data.type === "KAUFBOT_TOGGLE_MIC") {
+      micMuted = !!event.data.muted;
+      await call.setLocalAudio(!micMuted);
+    }
   });
 
-  endBtn.addEventListener("click", async () => {
+  endBtn?.addEventListener("click", async () => {
+    if (animationId) cancelAnimationFrame(animationId);
+
     if (call) {
       try {
         await call.leave();
