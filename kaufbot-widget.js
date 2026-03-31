@@ -96,57 +96,16 @@
 
     #kaufbot-body {
       flex: 1;
-      padding: 16px;
+      padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 12px;
     }
 
-    #kaufbot-video-shell {
-      flex: 1;
-      min-height: 420px;
-      border-radius: 18px;
-      background: #171a20;
-      overflow: hidden;
-      position: relative;
-    }
-
-    #kaufbot-status {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 24px;
-      color: rgba(255,255,255,.8);
-      font-size: 14px;
-      line-height: 1.4;
-    }
-
-    #kaufbot-footer {
-      display: flex;
-      gap: 10px;
-      padding-top: 4px;
-    }
-
-    .kaufbot-btn {
-      flex: 1;
+    #kaufbot-iframe {
+      width: 100%;
+      height: 100%;
       border: 0;
-      border-radius: 12px;
-      padding: 12px 14px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .kaufbot-btn.primary {
-      background: #fff;
-      color: #111;
-    }
-
-    .kaufbot-btn.secondary {
-      background: rgba(255,255,255,.08);
-      color: #fff;
+      background: #0f1115;
     }
 
     @media (max-width: 768px) {
@@ -174,27 +133,28 @@
       </div>
       <button id="kaufbot-close" aria-label="Close">×</button>
     </div>
-    <div id="kaufbot-body">
-      <div id="kaufbot-video-shell">
-        <div id="kaufbot-status">
-          We’re replacing the old video-call look with a cleaner KaufBot experience.
-        </div>
-      </div>
-      <div id="kaufbot-footer">
-        <button class="kaufbot-btn primary" id="kaufbot-start">Start KaufBot</button>
-        <button class="kaufbot-btn secondary" id="kaufbot-end">Close</button>
-      </div>
-    </div>
+    <div id="kaufbot-body"></div>
   `;
 
   document.body.appendChild(launcher);
   document.body.appendChild(overlay);
   document.body.appendChild(drawer);
 
+  const body = drawer.querySelector("#kaufbot-body");
   const closeBtn = drawer.querySelector("#kaufbot-close");
-  const endBtn = drawer.querySelector("#kaufbot-end");
+
+  function mountAgent() {
+    if (body.querySelector("#kaufbot-iframe")) return;
+
+    const iframe = document.createElement("iframe");
+    iframe.id = "kaufbot-iframe";
+    iframe.src = "https://growthmatixuk-kaufbot-widget.vercel.app/agent/";
+    iframe.allow = "camera; microphone; autoplay; fullscreen; display-capture";
+    body.appendChild(iframe);
+  }
 
   function openDrawer() {
+    mountAgent();
     overlay.classList.add("open");
     drawer.classList.add("open");
   }
@@ -202,15 +162,16 @@
   function closeDrawer() {
     overlay.classList.remove("open");
     drawer.classList.remove("open");
+    body.innerHTML = "";
   }
 
   launcher.addEventListener("click", openDrawer);
   closeBtn.addEventListener("click", closeDrawer);
-  endBtn.addEventListener("click", closeDrawer);
   overlay.addEventListener("click", closeDrawer);
 
-  // NOTE:
-  // This is the new shell only.
-  // Next step is wiring Daily custom mode into #kaufbot-video-shell
-  // instead of embedding the full meeting UI.
+  window.addEventListener("message", (event) => {
+    if (event.data && event.data.type === "KAUFBOT_CLOSE") {
+      closeDrawer();
+    }
+  });
 })();
