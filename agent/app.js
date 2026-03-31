@@ -1,10 +1,10 @@
 (async function () {
   const stage = document.getElementById("agent-stage");
   const loading = document.getElementById("agent-loading");
-  const endBtn = document.getElementById("end-btn");
 
   let call;
   let hiddenVideo;
+  let hiddenAudio;
   let canvas;
   let ctx;
   let animationId;
@@ -24,6 +24,7 @@
             canvas.height = videoHeight;
           }
 
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(hiddenVideo, 0, 0, canvas.width, canvas.height);
 
           const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -68,28 +69,53 @@
     hiddenVideo.playsInline = true;
     hiddenVideo.muted = true;
 
+    hiddenAudio = document.createElement("audio");
+    hiddenAudio.id = "agent-audio-hidden";
+    hiddenAudio.autoplay = true;
+    hiddenAudio.playsInline = true;
+    hiddenAudio.muted = false;
+
     canvas = document.createElement("canvas");
     canvas.id = "agent-canvas";
 
     ctx = canvas.getContext("2d", { willReadFrequently: true });
 
-    call.on("track-started", (ev) => {
-      if (
-        ev.track &&
-        ev.track.kind === "video" &&
-        ev.participant &&
-        !ev.participant.local
-      ) {
-        hiddenVideo.srcObject = new MediaStream([ev.track]);
+    stage.innerHTML = "";
+    stage.appendChild(hiddenVideo);
+    stage.appendChild(hiddenAudio);
+    stage.appendChild(canvas);
 
-        stage.innerHTML = "";
-        stage.appendChild(hiddenVideo);
-        stage.appendChild(canvas);
+    let remoteVideoTrack = null;
+    let remoteAudioTrack = null;
 
+    function attachMedia() {
+      if (remoteVideoTrack) {
+        hiddenVideo.srcObject = new MediaStream([remoteVideoTrack]);
         hiddenVideo.onloadedmetadata = () => {
-          hiddenVideo.play();
+          hiddenVideo.play().catch(console.warn);
           startChromaKey();
         };
+      }
+
+      if (remoteAudioTrack) {
+        hiddenAudio.srcObject = new MediaStream([remoteAudioTrack]);
+        hiddenAudio.play().catch(console.warn);
+      }
+
+      if (loading) loading.remove();
+    }
+
+    call.on("track-started", (ev) => {
+      if (!ev.track || !ev.participant || ev.participant.local) return;
+
+      if (ev.track.kind === "video") {
+        remoteVideoTrack = ev.track;
+        attachMedia();
+      }
+
+      if (ev.track.kind === "audio") {
+        remoteAudioTrack = ev.track;
+        attachMedia();
       }
     });
 
@@ -100,9 +126,6 @@
       startAudioOff: false
     });
 
-    if (loading && stage.contains(loading)) {
-      loading.remove();
-    }
   } catch (err) {
     console.error(err);
     if (loading) {
@@ -117,22 +140,16 @@
       micMuted = !!event.data.muted;
       await call.setLocalAudio(!micMuted);
     }
-  });
 
-  endBtn?.addEventListener("click", async () => {
-    if (animationId) cancelAnimationFrame(animationId);
+    if (event.data.type === "KAUFBOT_CLOSE_SELF") {
+      if (animationId) cancelAnimationFrame(animationId);
 
-    if (call) {
       try {
         await call.leave();
         call.destroy();
       } catch (e) {
         console.warn(e);
       }
-    }
-
-    if (window.parent !== window) {
-      window.parent.postMessage({ type: "KAUFBOT_CLOSE" }, "*");
     }
   });
 })();
