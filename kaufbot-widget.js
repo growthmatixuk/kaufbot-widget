@@ -28,89 +28,76 @@
       box-shadow: 0 12px 30px rgba(0,0,0,.25);
     }
 
-    #kaufbot-overlay {
+    #kaufbot-floating-wrap {
       position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.35);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .25s ease;
-      z-index: 999997;
-    }
-
-    #kaufbot-overlay.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    #kaufbot-drawer {
-      position: fixed;
-      top: 0;
-      right: 0;
-      width: 420px;
-      max-width: 100vw;
-      height: 100vh;
-      background: #0f1115;
-      color: #fff;
-      transform: translateX(100%);
-      transition: transform .3s ease;
+      right: 20px;
+      bottom: 90px;
+      width: 340px;
+      height: 620px;
       z-index: 999998;
-      display: flex;
-      flex-direction: column;
-      box-shadow: -20px 0 50px rgba(0,0,0,.25);
+      display: none;
+      pointer-events: none;
     }
 
-    #kaufbot-drawer.open {
-      transform: translateX(0);
+    #kaufbot-stage-shell {
+      position: absolute;
+      inset: 0;
+      background: transparent;
+      pointer-events: none;
     }
 
-    #kaufbot-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 18px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
-    }
-
-    #kaufbot-title {
-      font-size: 18px;
-      font-weight: 700;
-    }
-
-    #kaufbot-subtitle {
-      font-size: 12px;
-      opacity: .7;
-      margin-top: 2px;
-    }
-
-    #kaufbot-close {
-      border: 0;
-      background: rgba(255,255,255,.08);
-      color: #fff;
-      width: 36px;
-      height: 36px;
-      border-radius: 999px;
-      cursor: pointer;
-      font-size: 18px;
-    }
-
-    #kaufbot-body {
-      flex: 1;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    #kaufbot-iframe {
+    #kaufbot-agent-frame {
       width: 100%;
       height: 100%;
       border: 0;
-      background: #0f1115;
+      background: transparent;
+      pointer-events: none;
+    }
+
+    #kaufbot-close {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(0,0,0,.75);
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 3;
+      pointer-events: auto;
+    }
+
+    #kaufbot-controls {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 3;
+      pointer-events: auto;
+    }
+
+    .kaufbot-mini-btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: rgba(0,0,0,.75);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 600;
+      backdrop-filter: blur(6px);
     }
 
     @media (max-width: 768px) {
-      #kaufbot-drawer {
-        width: 100vw;
+      #kaufbot-floating-wrap {
+        width: 260px;
+        height: 460px;
+        right: 10px;
+        bottom: 80px;
       }
     }
   `;
@@ -120,58 +107,69 @@
   launcher.id = "kaufbot-launcher";
   launcher.textContent = "Talk to KaufBot";
 
-  const overlay = document.createElement("div");
-  overlay.id = "kaufbot-overlay";
-
-  const drawer = document.createElement("div");
-  drawer.id = "kaufbot-drawer";
-  drawer.innerHTML = `
-    <div id="kaufbot-header">
-      <div>
-        <div id="kaufbot-title">Talk to KaufBot</div>
-        <div id="kaufbot-subtitle">Your Click Backdrops assistant</div>
-      </div>
-      <button id="kaufbot-close" aria-label="Close">×</button>
+  const wrap = document.createElement("div");
+  wrap.id = "kaufbot-floating-wrap";
+  wrap.innerHTML = `
+    <button id="kaufbot-close" aria-label="Close">×</button>
+    <div id="kaufbot-stage-shell"></div>
+    <div id="kaufbot-controls">
+      <button class="kaufbot-mini-btn" id="kaufbot-mic-toggle">Mute mic</button>
     </div>
-    <div id="kaufbot-body"></div>
   `;
 
   document.body.appendChild(launcher);
-  document.body.appendChild(overlay);
-  document.body.appendChild(drawer);
+  document.body.appendChild(wrap);
 
-  const body = drawer.querySelector("#kaufbot-body");
-  const closeBtn = drawer.querySelector("#kaufbot-close");
+  const shell = wrap.querySelector("#kaufbot-stage-shell");
+  const closeBtn = wrap.querySelector("#kaufbot-close");
+  const micBtn = wrap.querySelector("#kaufbot-mic-toggle");
+
+  let mounted = false;
+  let micMuted = false;
 
   function mountAgent() {
-    if (body.querySelector("#kaufbot-iframe")) return;
-
+    if (mounted) return;
     const iframe = document.createElement("iframe");
-    iframe.id = "kaufbot-iframe";
+    iframe.id = "kaufbot-agent-frame";
     iframe.src = "https://growthmatixuk-kaufbot-widget.vercel.app/agent/";
     iframe.allow = "camera; microphone; autoplay; fullscreen; display-capture";
-    body.appendChild(iframe);
+    shell.appendChild(iframe);
+    mounted = true;
   }
 
-  function openDrawer() {
+  function openKaufbot() {
     mountAgent();
-    overlay.classList.add("open");
-    drawer.classList.add("open");
+    wrap.style.display = "block";
+    launcher.style.display = "none";
   }
 
-  function closeDrawer() {
-    overlay.classList.remove("open");
-    drawer.classList.remove("open");
-    body.innerHTML = "";
+  function closeKaufbot() {
+    wrap.style.display = "none";
+    launcher.style.display = "block";
+    shell.innerHTML = "";
+    mounted = false;
   }
 
-  launcher.addEventListener("click", openDrawer);
-  closeBtn.addEventListener("click", closeDrawer);
-  overlay.addEventListener("click", closeDrawer);
+  launcher.addEventListener("click", openKaufbot);
+  closeBtn.addEventListener("click", closeKaufbot);
+
+  micBtn.addEventListener("click", () => {
+    const frame = document.getElementById("kaufbot-agent-frame");
+    if (!frame || !frame.contentWindow) return;
+
+    micMuted = !micMuted;
+    frame.contentWindow.postMessage(
+      { type: "KAUFBOT_TOGGLE_MIC", muted: micMuted },
+      "*"
+    );
+    micBtn.textContent = micMuted ? "Unmute mic" : "Mute mic";
+  });
 
   window.addEventListener("message", (event) => {
-    if (event.data && event.data.type === "KAUFBOT_CLOSE") {
-      closeDrawer();
+    if (!event.data) return;
+
+    if (event.data.type === "KAUFBOT_CLOSE") {
+      closeKaufbot();
     }
   });
 })();
