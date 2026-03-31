@@ -46,6 +46,9 @@ html, body {
   background: #171a20;
   border-radius: 18px;
   overflow: hidden;
+  display: flex;
+align-items: center;
+justify-content: center;
 }
 
 #agent-loading {
