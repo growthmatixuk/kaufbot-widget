@@ -15,8 +15,35 @@
   let remoteVideoTrack = null;
   let remoteAudioTrack = null;
 
+  let kaufbotReady = false;
+  let sentReadyMessage = false;
+  let goodFrameCount = 0;
+
+  function markReady() {
+    if (kaufbotReady) return;
+    kaufbotReady = true;
+
+    if (canvas) {
+      canvas.style.opacity = "1";
+    }
+
+    if (loading) {
+      loading.remove();
+    }
+
+    if (!sentReadyMessage && window.parent !== window) {
+      sentReadyMessage = true;
+      window.parent.postMessage({ type: "KAUFBOT_READY" }, "*");
+    }
+  }
+
   function startChromaKey() {
     if (!hiddenVideo || !canvas || !ctx) return;
+
+    ctx.imageSmoothingEnabled = true;
+    if ("imageSmoothingQuality" in ctx) {
+      ctx.imageSmoothingQuality = "high";
+    }
 
     const draw = () => {
       if (hiddenVideo.readyState >= 2) {
@@ -43,20 +70,13 @@
 
             const greenDominance = g - Math.max(r, b);
 
-            // hard remove obvious green
             if (g > 95 && greenDominance > 28) {
               a = 0;
-            }
-            // soften edge spill
-            else if (g > 70 && greenDominance > 12) {
+            } else if (g > 70 && greenDominance > 12) {
               const spill = Math.min(1, (greenDominance - 12) / 28);
-
-              // reduce green spill on edges
               g = g * (1 - spill * 0.7);
               r = r + spill * 10;
               b = b + spill * 10;
-
-              // slightly soften alpha on fringes
               a = a * (1 - spill * 0.35);
             }
 
@@ -67,6 +87,23 @@
           }
 
           ctx.putImageData(frame, 0, 0);
+
+          // Wait until the incoming video has stabilised at a decent resolution
+          // before revealing KaufBot.
+          if (!kaufbotReady) {
+            const minWidth = 540;
+            const minHeight = 960;
+
+            if (videoWidth >= minWidth && videoHeight >= minHeight) {
+              goodFrameCount++;
+            } else {
+              goodFrameCount = 0;
+            }
+
+            if (goodFrameCount >= 8) {
+              markReady();
+            }
+          }
         }
       }
 
@@ -82,10 +119,6 @@
       hiddenVideo.onloadedmetadata = () => {
         hiddenVideo.play().catch(console.warn);
         startChromaKey();
-
-        if (canvas) {
-          canvas.style.opacity = "1";
-        }
       };
     }
 
@@ -93,8 +126,6 @@
       hiddenAudio.srcObject = new MediaStream([remoteAudioTrack]);
       hiddenAudio.play().catch(console.warn);
     }
-
-    if (loading) loading.remove();
   }
 
   async function initKaufBot() {
@@ -126,7 +157,7 @@
       canvas = document.createElement("canvas");
       canvas.id = "agent-canvas";
       canvas.style.opacity = "0";
-      canvas.style.transition = "opacity 0.2s ease";
+      canvas.style.transition = "opacity 0.18s ease";
 
       ctx = canvas.getContext("2d", { willReadFrequently: true });
 
@@ -151,6 +182,9 @@
 
       call.on("left-meeting", () => {
         joined = false;
+        kaufbotReady = false;
+        sentReadyMessage = false;
+        goodFrameCount = 0;
       });
     } catch (err) {
       console.error(err);
