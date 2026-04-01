@@ -17,10 +17,11 @@
 
   let kaufbotReady = false;
   let sentReadyMessage = false;
-  let goodFrameCount = 0;
+  let readyTimeout;
 
   function markReady() {
     if (kaufbotReady) return;
+
     kaufbotReady = true;
 
     if (canvas) {
@@ -88,21 +89,9 @@
 
           ctx.putImageData(frame, 0, 0);
 
-          // Wait until the incoming video has stabilised at a decent resolution
-          // before revealing KaufBot.
-          if (!kaufbotReady) {
-            const minWidth = 540;
-            const minHeight = 960;
-
-            if (videoWidth >= minWidth && videoHeight >= minHeight) {
-              goodFrameCount++;
-            } else {
-              goodFrameCount = 0;
-            }
-
-            if (goodFrameCount >= 8) {
-              markReady();
-            }
+          // As soon as we have a usable frame, reveal KaufBot.
+          if (!kaufbotReady && videoWidth > 0 && videoHeight > 0) {
+            markReady();
           }
         }
       }
@@ -184,7 +173,6 @@
         joined = false;
         kaufbotReady = false;
         sentReadyMessage = false;
-        goodFrameCount = 0;
       });
     } catch (err) {
       console.error(err);
@@ -206,6 +194,12 @@
       });
 
       joined = true;
+
+      // Fallback: never let it hang forever on loading.
+      readyTimeout = setTimeout(() => {
+        markReady();
+      }, 1800);
+
     } catch (err) {
       console.error("Join error:", err);
       if (loading) {
@@ -227,6 +221,7 @@
 
     if (event.data.type === "KAUFBOT_CLOSE_SELF") {
       if (animationId) cancelAnimationFrame(animationId);
+      if (readyTimeout) clearTimeout(readyTimeout);
 
       try {
         if (call) {
