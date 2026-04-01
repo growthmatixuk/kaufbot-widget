@@ -25,6 +25,7 @@ html, body {
   height: 100%;
   display: block;
   background: transparent;
+  filter: contrast(1.05) saturate(1.05) drop-shadow(0 0 2px rgba(0,0,0,0.35));
 }
 
 #agent-video-hidden,
