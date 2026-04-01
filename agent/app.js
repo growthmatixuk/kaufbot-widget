@@ -10,133 +10,167 @@
   let animationId;
   let micMuted = false;
 
- function startChromaKey() {
-  if (!hiddenVideo || !canvas || !ctx) return;
+  let sessionData = null;
+  let joined = false;
+  let remoteVideoTrack = null;
+  let remoteAudioTrack = null;
 
-  const draw = () => {
-    if (hiddenVideo.readyState >= 2) {
-      const videoWidth = hiddenVideo.videoWidth;
-      const videoHeight = hiddenVideo.videoHeight;
+  function startChromaKey() {
+    if (!hiddenVideo || !canvas || !ctx) return;
 
-      if (videoWidth && videoHeight) {
-        if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
-          canvas.width = videoWidth;
-          canvas.height = videoHeight;
-        }
+    const draw = () => {
+      if (hiddenVideo.readyState >= 2) {
+        const videoWidth = hiddenVideo.videoWidth;
+        const videoHeight = hiddenVideo.videoHeight;
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(hiddenVideo, 0, 0, videoWidth, videoHeight);
-
-        const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = frame.data;
-
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-
-          if (g > 110 && g > r * 1.25 && g > b * 1.25) {
-            data[i + 3] = 0;
+        if (videoWidth && videoHeight) {
+          if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
+            canvas.width = videoWidth;
+            canvas.height = videoHeight;
           }
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(hiddenVideo, 0, 0, videoWidth, videoHeight);
+
+          const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = frame.data;
+
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+
+            if (
+              g > 105 &&
+              g > r * 1.22 &&
+              g > b * 1.22
+            ) {
+              data[i + 3] = 0;
+            }
+          }
+
+          ctx.putImageData(frame, 0, 0);
+        }
+      }
+
+      animationId = requestAnimationFrame(draw);
+    };
+
+    draw();
+  }
+
+  function attachMedia() {
+    if (remoteVideoTrack) {
+      hiddenVideo.srcObject = new MediaStream([remoteVideoTrack]);
+      hiddenVideo.onloadedmetadata = () => {
+        hiddenVideo.play().catch(console.warn);
+        startChromaKey();
+
+        if (canvas) {
+          canvas.style.opacity = "1";
+        }
+      };
+    }
+
+    if (remoteAudioTrack) {
+      hiddenAudio.srcObject = new MediaStream([remoteAudioTrack]);
+      hiddenAudio.play().catch(console.warn);
+    }
+
+    if (loading) loading.remove();
+  }
+
+  async function initKaufBot() {
+    try {
+      const response = await fetch("https://growthmatixuk-kaufbot-widget.vercel.app/api/conversation", {
+        method: "POST"
+      });
+
+      sessionData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(sessionData.error || "Failed to start KaufBot");
+      }
+
+      call = window.Daily.createCallObject();
+
+      hiddenVideo = document.createElement("video");
+      hiddenVideo.id = "agent-video-hidden";
+      hiddenVideo.autoplay = true;
+      hiddenVideo.playsInline = true;
+      hiddenVideo.muted = true;
+
+      hiddenAudio = document.createElement("audio");
+      hiddenAudio.id = "agent-audio-hidden";
+      hiddenAudio.autoplay = true;
+      hiddenAudio.playsInline = true;
+      hiddenAudio.muted = false;
+
+      canvas = document.createElement("canvas");
+      canvas.id = "agent-canvas";
+      canvas.style.opacity = "0";
+      canvas.style.transition = "opacity 0.25s ease";
+
+      ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+      stage.innerHTML = "";
+      stage.appendChild(hiddenVideo);
+      stage.appendChild(hiddenAudio);
+      stage.appendChild(canvas);
+
+      call.on("track-started", (ev) => {
+        if (!ev.track || !ev.participant || ev.participant.local) return;
+
+        if (ev.track.kind === "video") {
+          remoteVideoTrack = ev.track;
+          attachMedia();
         }
 
-        ctx.putImageData(frame, 0, 0);
+        if (ev.track.kind === "audio") {
+          remoteAudioTrack = ev.track;
+          attachMedia();
+        }
+      });
+
+      call.on("left-meeting", () => {
+        joined = false;
+      });
+    } catch (err) {
+      console.error(err);
+      if (loading) {
+        loading.textContent = "Could not start KaufBot.";
       }
-    }
-
-    animationId = requestAnimationFrame(draw);
-  };
-
-  draw();
-}
-
-  try {
-    const response = await fetch("https://growthmatixuk-kaufbot-widget.vercel.app/api/conversation", {
-      method: "POST"
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Failed to start KaufBot");
-    }
-
-    call = window.Daily.createCallObject();
-
-    hiddenVideo = document.createElement("video");
-    hiddenVideo.id = "agent-video-hidden";
-    hiddenVideo.autoplay = true;
-    hiddenVideo.playsInline = true;
-    hiddenVideo.muted = true;
-
-    hiddenAudio = document.createElement("audio");
-    hiddenAudio.id = "agent-audio-hidden";
-    hiddenAudio.autoplay = true;
-    hiddenAudio.playsInline = true;
-    hiddenAudio.muted = false;
-
-    canvas = document.createElement("canvas");
-    canvas.id = "agent-canvas";
-
-    ctx = canvas.getContext("2d", { willReadFrequently: true });
-
-    stage.innerHTML = "";
-    stage.appendChild(hiddenVideo);
-    stage.appendChild(hiddenAudio);
-    stage.appendChild(canvas);
-
-    let remoteVideoTrack = null;
-    let remoteAudioTrack = null;
-
-    function attachMedia() {
-      if (remoteVideoTrack) {
-        hiddenVideo.srcObject = new MediaStream([remoteVideoTrack]);
-        hiddenVideo.onloadedmetadata = () => {
-          hiddenVideo.play().catch(console.warn);
-          startChromaKey();
-        };
-      }
-
-      if (remoteAudioTrack) {
-        hiddenAudio.srcObject = new MediaStream([remoteAudioTrack]);
-        hiddenAudio.play().catch(console.warn);
-      }
-
-      if (loading) loading.remove();
-    }
-
-    call.on("track-started", (ev) => {
-      if (!ev.track || !ev.participant || ev.participant.local) return;
-
-      if (ev.track.kind === "video") {
-        remoteVideoTrack = ev.track;
-        attachMedia();
-      }
-
-      if (ev.track.kind === "audio") {
-        remoteAudioTrack = ev.track;
-        attachMedia();
-      }
-    });
-
-    await call.join({
-      url: data.conversation_url,
-      token: data.meeting_token,
-      startVideoOff: true,
-      startAudioOff: false
-    });
-
-  } catch (err) {
-    console.error(err);
-    if (loading) {
-      loading.textContent = "Could not start KaufBot.";
     }
   }
 
-  window.addEventListener("message", async (event) => {
-    if (!event.data || !call) return;
+  async function joinKaufBot() {
+    if (!call || !sessionData || joined) return;
 
-    if (event.data.type === "KAUFBOT_TOGGLE_MIC") {
+    try {
+      await call.join({
+        url: sessionData.conversation_url,
+        token: sessionData.meeting_token,
+        startVideoOff: true,
+        startAudioOff: false
+      });
+
+      joined = true;
+    } catch (err) {
+      console.error("Join error:", err);
+      if (loading) {
+        loading.textContent = "Could not join KaufBot.";
+      }
+    }
+  }
+
+  // Pre-warm immediately so click-to-open feels faster
+  await initKaufBot();
+  await joinKaufBot();
+
+  window.addEventListener("message", async (event) => {
+    if (!event.data) return;
+
+    if (event.data.type === "KAUFBOT_TOGGLE_MIC" && call) {
       micMuted = !!event.data.muted;
       await call.setLocalAudio(!micMuted);
     }
@@ -145,8 +179,10 @@
       if (animationId) cancelAnimationFrame(animationId);
 
       try {
-        await call.leave();
-        call.destroy();
+        if (call) {
+          await call.leave();
+          call.destroy();
+        }
       } catch (e) {
         console.warn(e);
       }
