@@ -37,7 +37,7 @@
       z-index: 999998;
       pointer-events: none;
       opacity: 0;
-      transition: opacity 0.25s ease;
+      transition: opacity 0.2s ease;
     }
 
     #kaufbot-floating-wrap.visible {
@@ -58,6 +58,29 @@
       border: 0;
       background: transparent;
       pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    #kaufbot-agent-frame.ready {
+      opacity: 1;
+    }
+
+    #kaufbot-loading {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      text-shadow: 0 2px 10px rgba(0,0,0,.35);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    #kaufbot-loading.visible {
+      display: flex;
     }
 
     #kaufbot-close {
@@ -118,6 +141,7 @@
   wrap.innerHTML = `
     <button id="kaufbot-close" aria-label="Close">×</button>
     <div id="kaufbot-stage-shell"></div>
+    <div id="kaufbot-loading">Loading KaufBot...</div>
     <div id="kaufbot-controls">
       <button class="kaufbot-mini-btn" id="kaufbot-mic-toggle">Mute mic</button>
     </div>
@@ -129,9 +153,11 @@
   const shell = wrap.querySelector("#kaufbot-stage-shell");
   const closeBtn = wrap.querySelector("#kaufbot-close");
   const micBtn = wrap.querySelector("#kaufbot-mic-toggle");
+  const loading = wrap.querySelector("#kaufbot-loading");
 
   let mounted = false;
   let micMuted = false;
+  let agentReady = false;
 
   function mountAgent() {
     if (mounted) return;
@@ -141,15 +167,25 @@
     iframe.src = "https://growthmatixuk-kaufbot-widget.vercel.app/agent/";
     iframe.allow = "camera; microphone; autoplay; fullscreen; display-capture";
     shell.appendChild(iframe);
+
     mounted = true;
   }
 
-  // Preload immediately on page load
+  // Preload immediately
   mountAgent();
 
   function openKaufbot() {
     wrap.classList.add("visible");
     launcher.style.display = "none";
+
+    const frame = document.getElementById("kaufbot-agent-frame");
+    if (!agentReady) {
+      loading.classList.add("visible");
+      frame?.classList.remove("ready");
+    } else {
+      loading.classList.remove("visible");
+      frame?.classList.add("ready");
+    }
   }
 
   function closeKaufbot() {
@@ -160,6 +196,16 @@
 
     wrap.classList.remove("visible");
     launcher.style.display = "block";
+    agentReady = false;
+    loading.classList.remove("visible");
+
+    if (frame) {
+      frame.classList.remove("ready");
+      frame.remove();
+    }
+
+    mounted = false;
+    mountAgent();
   }
 
   launcher.addEventListener("click", openKaufbot);
@@ -175,5 +221,16 @@
       "*"
     );
     micBtn.textContent = micMuted ? "Unmute mic" : "Mute mic";
+  });
+
+  window.addEventListener("message", (event) => {
+    if (!event.data) return;
+
+    if (event.data.type === "KAUFBOT_READY") {
+      agentReady = true;
+      loading.classList.remove("visible");
+      const frame = document.getElementById("kaufbot-agent-frame");
+      frame?.classList.add("ready");
+    }
   });
 })();
