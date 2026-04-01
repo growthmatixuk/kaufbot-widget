@@ -10,45 +10,45 @@
   let animationId;
   let micMuted = false;
 
-  function startChromaKey() {
-    if (!hiddenVideo || !canvas || !ctx) return;
+ function startChromaKey() {
+  if (!hiddenVideo || !canvas || !ctx) return;
 
-    const draw = () => {
-      if (hiddenVideo.readyState >= 2) {
-        const videoWidth = hiddenVideo.videoWidth;
-        const videoHeight = hiddenVideo.videoHeight;
+  const draw = () => {
+    if (hiddenVideo.readyState >= 2) {
+      const videoWidth = hiddenVideo.videoWidth;
+      const videoHeight = hiddenVideo.videoHeight;
 
-        if (videoWidth && videoHeight) {
-          if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
-            canvas.width = videoWidth;
-            canvas.height = videoHeight;
-          }
-
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(hiddenVideo, 0, 0, canvas.width, canvas.height);
-
-          const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const data = frame.data;
-
-          for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-
-            if (g > 110 && g > r * 1.25 && g > b * 1.25) {
-              data[i + 3] = 0;
-            }
-          }
-
-          ctx.putImageData(frame, 0, 0);
+      if (videoWidth && videoHeight) {
+        if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
+          canvas.width = videoWidth;
+          canvas.height = videoHeight;
         }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(hiddenVideo, 0, 0, videoWidth, videoHeight);
+
+        const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = frame.data;
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+
+          if (g > 110 && g > r * 1.25 && g > b * 1.25) {
+            data[i + 3] = 0;
+          }
+        }
+
+        ctx.putImageData(frame, 0, 0);
       }
+    }
 
-      animationId = requestAnimationFrame(draw);
-    };
+    animationId = requestAnimationFrame(draw);
+  };
 
-    draw();
-  }
+  draw();
+}
 
   try {
     const response = await fetch("https://growthmatixuk-kaufbot-widget.vercel.app/api/conversation", {
