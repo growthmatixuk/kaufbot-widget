@@ -36,17 +36,34 @@
           const data = frame.data;
 
           for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
+            let r = data[i];
+            let g = data[i + 1];
+            let b = data[i + 2];
+            let a = data[i + 3];
 
-            if (
-              g > 105 &&
-              g > r * 1.22 &&
-              g > b * 1.22
-            ) {
-              data[i + 3] = 0;
+            const greenDominance = g - Math.max(r, b);
+
+            // hard remove obvious green
+            if (g > 95 && greenDominance > 28) {
+              a = 0;
             }
+            // soften edge spill
+            else if (g > 70 && greenDominance > 12) {
+              const spill = Math.min(1, (greenDominance - 12) / 28);
+
+              // reduce green spill on edges
+              g = g * (1 - spill * 0.7);
+              r = r + spill * 10;
+              b = b + spill * 10;
+
+              // slightly soften alpha on fringes
+              a = a * (1 - spill * 0.35);
+            }
+
+            data[i] = r;
+            data[i + 1] = g;
+            data[i + 2] = b;
+            data[i + 3] = a;
           }
 
           ctx.putImageData(frame, 0, 0);
@@ -109,7 +126,7 @@
       canvas = document.createElement("canvas");
       canvas.id = "agent-canvas";
       canvas.style.opacity = "0";
-      canvas.style.transition = "opacity 0.25s ease";
+      canvas.style.transition = "opacity 0.2s ease";
 
       ctx = canvas.getContext("2d", { willReadFrequently: true });
 
@@ -163,7 +180,6 @@
     }
   }
 
-  // Pre-warm immediately so click-to-open feels faster
   await initKaufBot();
   await joinKaufBot();
 
