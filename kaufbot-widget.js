@@ -32,11 +32,17 @@
       position: fixed;
       right: 24px;
       bottom: 24px;
-      width: 420px;
+      width: 380px;
       height: 620px;
       z-index: 999998;
-      display: none;
       pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    #kaufbot-floating-wrap.visible {
+      opacity: 1;
+      pointer-events: auto;
     }
 
     #kaufbot-stage-shell {
@@ -57,7 +63,7 @@
     #kaufbot-close {
       position: absolute;
       top: 14px;
-      right: 6px;
+      right: 8px;
       width: 38px;
       height: 38px;
       border: 0;
@@ -94,19 +100,10 @@
 
     @media (max-width: 768px) {
       #kaufbot-floating-wrap {
-        width: 240px;
-        height: 500px;
-        right: 10px;
-        bottom: 10px;
-      }
-
-      #kaufbot-controls {
-        bottom: 10px;
-      }
-
-      #kaufbot-close {
-        top: 8px;
-        right: 4px;
+        width: 320px;
+        height: 520px;
+        right: 8px;
+        bottom: 8px;
       }
     }
   `;
@@ -138,6 +135,7 @@
 
   function mountAgent() {
     if (mounted) return;
+
     const iframe = document.createElement("iframe");
     iframe.id = "kaufbot-agent-frame";
     iframe.src = "https://growthmatixuk-kaufbot-widget.vercel.app/agent/";
@@ -146,9 +144,11 @@
     mounted = true;
   }
 
+  // Preload immediately on page load
+  mountAgent();
+
   function openKaufbot() {
-    mountAgent();
-    wrap.style.display = "block";
+    wrap.classList.add("visible");
     launcher.style.display = "none";
   }
 
@@ -158,10 +158,8 @@
       frame.contentWindow.postMessage({ type: "KAUFBOT_CLOSE_SELF" }, "*");
     }
 
-    wrap.style.display = "none";
+    wrap.classList.remove("visible");
     launcher.style.display = "block";
-    shell.innerHTML = "";
-    mounted = false;
   }
 
   launcher.addEventListener("click", openKaufbot);
