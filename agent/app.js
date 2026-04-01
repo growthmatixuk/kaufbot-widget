@@ -17,6 +17,8 @@
 
   let kaufbotReady = false;
   let sentReadyMessage = false;
+  let openingRequested = false;
+  let joinInProgress = false;
   let readyTimeout;
 
   function markReady() {
@@ -35,6 +37,23 @@
     if (!sentReadyMessage && window.parent !== window) {
       sentReadyMessage = true;
       window.parent.postMessage({ type: "KAUFBOT_READY" }, "*");
+    }
+  }
+
+  function resetReadyState() {
+    kaufbotReady = false;
+    sentReadyMessage = false;
+
+    if (loading && !stage.contains(loading)) {
+      stage.appendChild(loading);
+    }
+
+    if (loading) {
+      loading.textContent = "Loading KaufBot...";
+    }
+
+    if (canvas) {
+      canvas.style.opacity = "0";
     }
   }
 
@@ -89,8 +108,7 @@
 
           ctx.putImageData(frame, 0, 0);
 
-          // As soon as we have a usable frame, reveal KaufBot.
-          if (!kaufbotReady && videoWidth > 0 && videoHeight > 0) {
+          if (!kaufbotReady && openingRequested) {
             markReady();
           }
         }
@@ -171,8 +189,9 @@
 
       call.on("left-meeting", () => {
         joined = false;
-        kaufbotReady = false;
-        sentReadyMessage = false;
+        joinInProgress = false;
+        openingRequested = false;
+        resetReadyState();
       });
     } catch (err) {
       console.error(err);
@@ -183,7 +202,11 @@
   }
 
   async function joinKaufBot() {
-    if (!call || !sessionData || joined) return;
+    if (!call || !sessionData || joined || joinInProgress) return;
+
+    joinInProgress = true;
+    openingRequested = true;
+    resetReadyState();
 
     try {
       await call.join({
@@ -194,13 +217,15 @@
       });
 
       joined = true;
+      joinInProgress = false;
 
-      // Fallback: never let it hang forever on loading.
       readyTimeout = setTimeout(() => {
-        markReady();
-      }, 1800);
-
+        if (openingRequested) {
+          markReady();
+        }
+      }, 1500);
     } catch (err) {
+      joinInProgress = false;
       console.error("Join error:", err);
       if (loading) {
         loading.textContent = "Could not join KaufBot.";
@@ -208,29 +233,41 @@
     }
   }
 
+  async function leaveKaufBot() {
+    if (animationId) cancelAnimationFrame(animationId);
+    if (readyTimeout) clearTimeout(readyTimeout);
+
+    openingRequested = false;
+    resetReadyState();
+
+    try {
+      if (call && joined) {
+        await call.leave();
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+
+    joined = false;
+    joinInProgress = false;
+  }
+
   await initKaufBot();
-  await joinKaufBot();
 
   window.addEventListener("message", async (event) => {
     if (!event.data) return;
 
-    if (event.data.type === "KAUFBOT_TOGGLE_MIC" && call) {
+    if (event.data.type === "KAUFBOT_OPEN") {
+      await joinKaufBot();
+    }
+
+    if (event.data.type === "KAUFBOT_TOGGLE_MIC" && call && joined) {
       micMuted = !!event.data.muted;
       await call.setLocalAudio(!micMuted);
     }
 
     if (event.data.type === "KAUFBOT_CLOSE_SELF") {
-      if (animationId) cancelAnimationFrame(animationId);
-      if (readyTimeout) clearTimeout(readyTimeout);
-
-      try {
-        if (call) {
-          await call.leave();
-          call.destroy();
-        }
-      } catch (e) {
-        console.warn(e);
-      }
+      await leaveKaufBot();
     }
   });
 })();
