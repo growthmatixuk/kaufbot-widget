@@ -19,7 +19,7 @@ html, body {
   position: absolute;
   bottom: 0;
   left: 50%;
-  transform: translateX(-47%) scale(1.08);
+  transform: translateX(-50%) scale(1.08);
   transform-origin: bottom center;
   width: auto;
   height: 100%;
