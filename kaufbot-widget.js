@@ -171,7 +171,7 @@
     mounted = true;
   }
 
-  // Preload immediately
+  // Preload iframe/page only
   mountAgent();
 
   function openKaufbot() {
@@ -179,12 +179,11 @@
     launcher.style.display = "none";
 
     const frame = document.getElementById("kaufbot-agent-frame");
-    if (!agentReady) {
-      loading.classList.add("visible");
-      frame?.classList.remove("ready");
-    } else {
-      loading.classList.remove("visible");
-      frame?.classList.add("ready");
+    loading.classList.add("visible");
+    frame?.classList.remove("ready");
+
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.postMessage({ type: "KAUFBOT_OPEN" }, "*");
     }
   }
 
@@ -201,11 +200,7 @@
 
     if (frame) {
       frame.classList.remove("ready");
-      frame.remove();
     }
-
-    mounted = false;
-    mountAgent();
   }
 
   launcher.addEventListener("click", openKaufbot);
