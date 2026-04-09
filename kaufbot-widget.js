@@ -2,14 +2,17 @@
   if (window.__kaufbotLoaded) return;
   window.__kaufbotLoaded = true;
 
-  const isHome =
-    location.pathname === "/" || document.body.classList.contains("home");
+  const blockedPaths = [
+    "/cart",
+    "/checkout",
+    "/my-account"
+  ];
 
-  const isProduct =
-    document.body.classList.contains("single-product") ||
-    location.pathname.includes("/product/");
+  const currentPath = location.pathname.toLowerCase();
 
-  if (!(isHome || isProduct)) return;
+  if (blockedPaths.some(path => currentPath.includes(path))) {
+    return;
+  }
 
   const style = document.createElement("style");
   style.innerHTML = `
