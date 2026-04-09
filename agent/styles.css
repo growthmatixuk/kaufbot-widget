@@ -31,7 +31,7 @@ html, body {
   left: 50%;
   width: auto;
   height: 100%;
-  transform: translateX(-48%) scale(1.06);
+  transform: translateX(-48%) scale(1.04);
   transform-origin: bottom center;
   display: block;
   background: transparent;
