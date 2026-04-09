@@ -35,6 +35,10 @@
       canvas.style.opacity = "1";
     }
 
+    if (logoEl) {
+  logoEl.style.opacity = "0.95";
+}
+
     if (loading) {
       loading.remove();
     }
@@ -58,6 +62,11 @@
     if (canvas) {
       canvas.style.opacity = "0";
     }
+
+    if (logoEl) {
+  logoEl.style.opacity = "0";
+}
+    
   }
 
   function animateLogo() {
