@@ -182,9 +182,43 @@
       ctx = canvas.getContext("2d", { willReadFrequently: true });
 
       stage.innerHTML = "";
-      stage.appendChild(hiddenVideo);
-      stage.appendChild(hiddenAudio);
-      stage.appendChild(canvas);
+
+// wrapper for layering
+const wrap = document.createElement("div");
+wrap.style.position = "relative";
+wrap.style.width = "100%";
+wrap.style.height = "100%";
+
+hiddenVideo.style.display = "none";
+hiddenAudio.style.display = "none";
+
+canvas.style.display = "block";
+canvas.style.width = "100%";
+canvas.style.height = "100%";
+
+// 👇 LOGO ELEMENT
+const logo = document.createElement("img");
+logo.src = "https://drive.google.com/file/d/1RFWqqLJv28ozve2iskf6vI3hmU3XJt9l/view?usp=drive_link"; // <-- replace this
+logo.id = "kaufbot-logo";
+
+logo.style.position = "absolute";
+logo.style.width = "60px";           // tweak size
+logo.style.opacity = "0.9";
+logo.style.pointerEvents = "none";
+logo.style.transition = "transform 0.1s ease";
+
+// positioning (we’ll tweak next)
+logo.style.left = "58%";
+logo.style.top = "42%";
+logo.style.transform = "translate(-50%, -50%)";
+
+// assemble
+wrap.appendChild(canvas);
+wrap.appendChild(logo);
+
+stage.appendChild(hiddenVideo);
+stage.appendChild(hiddenAudio);
+stage.appendChild(wrap);
 
       call.on("track-started", (ev) => {
         if (!ev.track || !ev.participant || ev.participant.local) return;
