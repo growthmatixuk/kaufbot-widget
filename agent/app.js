@@ -8,7 +8,6 @@
   let canvas;
   let ctx;
   let animationId;
-  let micMuted = true;
 
   let sessionData = null;
   let joined = false;
@@ -19,6 +18,9 @@
   let sentReadyMessage = false;
   let readyTimeout = null;
   let goodFrameCount = 0;
+
+  let micMuted = true;
+  let conversationActivated = false;
 
   function markReady() {
     if (kaufbotReady) return;
@@ -105,8 +107,6 @@
 
           ctx.putImageData(frame, 0, 0);
 
-          // Only reveal KaufBot when the stream has stabilised
-          // at a decent resolution for a few frames.
           if (!kaufbotReady) {
             const minWidth = 480;
             const minHeight = 720;
@@ -117,7 +117,7 @@
               goodFrameCount = 0;
             }
 
-            if (goodFrameCount >= 8) {
+            if (goodFrameCount >= 6) {
               markReady();
             }
           }
@@ -224,11 +224,9 @@
 
       joined = true;
 
-      // Keep user mic muted until explicitly enabled
+      // Keep mic off until user explicitly starts talking
       await call.setLocalAudio(false);
 
-      // Fallback: if WebRTC never reports a strong enough frame,
-      // reveal after a sensible delay rather than hang forever.
       readyTimeout = setTimeout(() => {
         markReady();
       }, 2200);
@@ -253,6 +251,8 @@
     }
 
     joined = false;
+    micMuted = true;
+    conversationActivated = false;
   }
 
   await initKaufBot();
@@ -261,7 +261,13 @@
   window.addEventListener("message", async (event) => {
     if (!event.data) return;
 
-    if (event.data.type === "KAUFBOT_TOGGLE_MIC" && call && joined) {
+    if (event.data.type === "KAUFBOT_START_TALKING" && call && joined) {
+      conversationActivated = true;
+      micMuted = false;
+      await call.setLocalAudio(true);
+    }
+
+    if (event.data.type === "KAUFBOT_TOGGLE_MIC" && call && joined && conversationActivated) {
       micMuted = !!event.data.muted;
       await call.setLocalAudio(!micMuted);
     }
