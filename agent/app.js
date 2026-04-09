@@ -108,8 +108,8 @@
           // Only reveal KaufBot when the stream has stabilised
           // at a decent resolution for a few frames.
           if (!kaufbotReady) {
-            const minWidth = 480;
-            const minHeight = 720;
+            const minWidth = 540;
+            const minHeight = 810;
 
             if (videoWidth >= minWidth && videoHeight >= minHeight) {
               goodFrameCount++;
@@ -117,7 +117,7 @@
               goodFrameCount = 0;
             }
 
-            if (goodFrameCount >= 6) {
+            if (goodFrameCount >= 8) {
               markReady();
             }
           }
