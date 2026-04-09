@@ -1,17 +1,15 @@
 export default async function handler(req, res) {
- const allowedOrigins = [
-  "https://clickbackdrops.com",
-  "https://www.clickbackdrops.com",
-  "https://staging.clickbackdrops.com",
-  "https://clickbackdrops-ai-co-uk.stackstaging.com",
- "https://www.clickbackdrops-ai-co-uk.stackstaging.com"
-];
+  const allowedOrigins = [
+    "https://clickbackdrops.com",
+    "https://www.clickbackdrops.com",
+    "https://staging.clickbackdrops.com",
+    "https://clickbackdrops-ai-co-uk.stackstaging.com"
+  ];
 
-const origin = req.headers.origin || "";
-
-if (allowedOrigins.includes(origin)) {
-  res.setHeader("Access-Control-Allow-Origin", origin);
-}
+  const origin = req.headers.origin || "";
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
 
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -56,7 +54,8 @@ if (allowedOrigins.includes(origin)) {
 
     return res.status(200).json({
       conversation_url: data.conversation_url,
-      meeting_token: data.meeting_token
+      meeting_token: data.meeting_token,
+      conversation_id: data.conversation_id
     });
   } catch (error) {
     return res.status(500).json({
