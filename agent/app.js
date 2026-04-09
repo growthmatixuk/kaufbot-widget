@@ -1,3 +1,6 @@
+const urlParams = new URLSearchParams(window.location.search);
+const pageContext = JSON.parse(urlParams.get("context") || "{}");
+
 (async function () {
   const stage = document.getElementById("agent-stage");
   const loading = document.getElementById("agent-loading");
