@@ -22,6 +22,9 @@
   let micMuted = true;
   let conversationActivated = false;
 
+  const WELCOME_TEXT =
+    "Hi, welcome to Click Backdrops. I’m KaufBot. Tell me what you’re looking for and I’ll help you find the right backdrop. If your browser asks for microphone access, allow it so I can hear you properly.";
+
   function markReady() {
     if (kaufbotReady) return;
 
@@ -224,7 +227,6 @@
 
       joined = true;
 
-      // Keep mic off until user explicitly starts talking
       await call.setLocalAudio(false);
 
       readyTimeout = setTimeout(() => {
@@ -255,6 +257,25 @@
     conversationActivated = false;
   }
 
+  async function sendWelcomeMessage() {
+    if (!call || !sessionData?.conversation_id) return;
+
+    const interaction = {
+      message_type: "conversation",
+      event_type: "conversation.respond",
+      conversation_id: sessionData.conversation_id,
+      properties: {
+        text: WELCOME_TEXT
+      }
+    };
+
+    try {
+      call.sendAppMessage(interaction, "*");
+    } catch (err) {
+      console.warn("Failed to send welcome interaction", err);
+    }
+  }
+
   await initKaufBot();
   await joinKaufBot();
 
@@ -264,7 +285,9 @@
     if (event.data.type === "KAUFBOT_START_TALKING" && call && joined) {
       conversationActivated = true;
       micMuted = false;
+
       await call.setLocalAudio(true);
+      await sendWelcomeMessage();
     }
 
     if (event.data.type === "KAUFBOT_TOGGLE_MIC" && call && joined && conversationActivated) {
