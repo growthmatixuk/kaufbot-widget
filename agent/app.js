@@ -39,7 +39,7 @@ setTimeout(() => {
   if (logoEl) {
     logoEl.style.opacity = "0.95";
   }
-}, 180);
+}, 220);
     }
 
     if (logoEl) {
