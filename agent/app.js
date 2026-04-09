@@ -62,10 +62,6 @@
     if (canvas) {
       canvas.style.opacity = "0";
     }
-
-    if (logoEl) {
-  logoEl.style.opacity = "0";
-}
     
   }
 
