@@ -164,7 +164,6 @@
     mounted = true;
   }
 
-  // preload immediately
   mountAgent();
 
   function openKaufbot() {
