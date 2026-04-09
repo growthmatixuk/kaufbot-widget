@@ -17,7 +17,8 @@
 
   let kaufbotReady = false;
   let sentReadyMessage = false;
-  let readyTimeout;
+  let readyTimeout = null;
+  let goodFrameCount = 0;
 
   function markReady() {
     if (kaufbotReady) return;
@@ -35,6 +36,21 @@
     if (!sentReadyMessage && window.parent !== window) {
       sentReadyMessage = true;
       window.parent.postMessage({ type: "KAUFBOT_READY" }, "*");
+    }
+  }
+
+  function resetReadyState() {
+    kaufbotReady = false;
+    sentReadyMessage = false;
+    goodFrameCount = 0;
+
+    if (readyTimeout) {
+      clearTimeout(readyTimeout);
+      readyTimeout = null;
+    }
+
+    if (canvas) {
+      canvas.style.opacity = "0";
     }
   }
 
@@ -89,8 +105,21 @@
 
           ctx.putImageData(frame, 0, 0);
 
-          if (!kaufbotReady && videoWidth > 0 && videoHeight > 0) {
-            markReady();
+          // Only reveal KaufBot when the stream has stabilised
+          // at a decent resolution for a few frames.
+          if (!kaufbotReady) {
+            const minWidth = 480;
+            const minHeight = 720;
+
+            if (videoWidth >= minWidth && videoHeight >= minHeight) {
+              goodFrameCount++;
+            } else {
+              goodFrameCount = 0;
+            }
+
+            if (goodFrameCount >= 6) {
+              markReady();
+            }
           }
         }
       }
@@ -170,8 +199,7 @@
 
       call.on("left-meeting", () => {
         joined = false;
-        kaufbotReady = false;
-        sentReadyMessage = false;
+        resetReadyState();
       });
     } catch (err) {
       console.error(err);
@@ -185,6 +213,8 @@
     if (!call || !sessionData || joined) return;
 
     try {
+      resetReadyState();
+
       await call.join({
         url: sessionData.conversation_url,
         token: sessionData.meeting_token,
@@ -194,12 +224,14 @@
 
       joined = true;
 
-      // Keep user mic muted until they explicitly enable it
+      // Keep user mic muted until explicitly enabled
       await call.setLocalAudio(false);
 
+      // Fallback: if WebRTC never reports a strong enough frame,
+      // reveal after a sensible delay rather than hang forever.
       readyTimeout = setTimeout(() => {
         markReady();
-      }, 1500);
+      }, 2200);
     } catch (err) {
       console.error("Join error:", err);
       if (loading) {
@@ -210,7 +242,7 @@
 
   async function leaveKaufBot() {
     if (animationId) cancelAnimationFrame(animationId);
-    if (readyTimeout) clearTimeout(readyTimeout);
+    resetReadyState();
 
     try {
       if (call && joined) {
