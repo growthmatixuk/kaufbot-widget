@@ -8,6 +8,7 @@
   let canvas;
   let ctx;
   let animationId;
+  let logoEl;
 
   let sessionData = null;
   let joined = false;
@@ -57,6 +58,23 @@
     if (canvas) {
       canvas.style.opacity = "0";
     }
+  }
+
+  function animateLogo() {
+    if (!logoEl) return;
+
+    const t = performance.now() * 0.002;
+
+    const y = Math.sin(t) * 0.8;
+    const rotate = Math.sin(t * 0.7) * 0.4;
+    const scale = 1 + Math.sin(t * 0.5) * 0.005;
+
+    logoEl.style.transform = `
+      translate(-50%, -50%)
+      translateY(${y}px)
+      rotate(${rotate}deg)
+      scale(${scale})
+    `;
   }
 
   function startChromaKey() {
@@ -109,6 +127,8 @@
           }
 
           ctx.putImageData(frame, 0, 0);
+
+          animateLogo();
 
           if (!kaufbotReady) {
             const minWidth = 480;
@@ -184,15 +204,15 @@
       const renderWrap = document.createElement("div");
       renderWrap.id = "agent-render-wrap";
 
-      const logo = document.createElement("img");
-      logo.id = "kaufbot-logo";
-      logo.src = "https://i.postimg.cc/PPCXFF2y/click-backdrops-logo-white-r.png"; // change this
+      logoEl = document.createElement("img");
+      logoEl.id = "kaufbot-logo";
+      logoEl.src = "https://i.postimg.cc/PPCXFF2y/click-backdrops-logo-white-r.png";
 
       stage.innerHTML = "";
       stage.appendChild(hiddenVideo);
       stage.appendChild(hiddenAudio);
       renderWrap.appendChild(canvas);
-      renderWrap.appendChild(logo);
+      renderWrap.appendChild(logoEl);
       stage.appendChild(renderWrap);
 
       call.on("track-started", (ev) => {
