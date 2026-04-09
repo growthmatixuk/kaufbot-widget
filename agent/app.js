@@ -117,7 +117,7 @@
               goodFrameCount = 0;
             }
 
-            if (goodFrameCount >= 6) {
+            if (goodFrameCount >= 8) {
               markReady();
             }
           }
