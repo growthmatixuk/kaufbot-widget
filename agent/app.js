@@ -33,6 +33,13 @@
 
     if (canvas) {
       canvas.style.opacity = "1";
+
+      // 👇 wait until canvas is actually visible before showing logo
+setTimeout(() => {
+  if (logoEl) {
+    logoEl.style.opacity = "0.95";
+  }
+}, 180);
     }
 
     if (logoEl) {
