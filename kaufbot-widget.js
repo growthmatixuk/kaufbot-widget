@@ -160,7 +160,18 @@
 
     const iframe = document.createElement("iframe");
     iframe.id = "kaufbot-agent-frame";
-    iframe.src = "https://growthmatixuk-kaufbot-widget.vercel.app/agent/";
+   const pageContext = {
+  url: window.location.href,
+  path: window.location.pathname,
+  title: document.title,
+  h1: document.querySelector("h1")?.innerText || "",
+};
+
+iframe.src =
+  "https://growthmatixuk-kaufbot-widget.vercel.app/agent/?" +
+  new URLSearchParams({
+    context: JSON.stringify(pageContext),
+  });
     iframe.allow = "camera; microphone; autoplay; fullscreen; display-capture";
     shell.appendChild(iframe);
 
