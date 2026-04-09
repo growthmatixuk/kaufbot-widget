@@ -23,15 +23,16 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Missing Tavus environment variables" });
   }
 
-  const tavusPayload = {
-    replica_id: TAVUS_REPLICA_ID,
-    persona_id: TAVUS_PERSONA_ID,
-    require_auth: true,
-    properties: {
-      max_call_duration: 600,
-      apply_greenscreen: true
-    }
-  };
+ const tavusPayload = {
+  replica_id: TAVUS_REPLICA_ID,
+  persona_id: TAVUS_PERSONA_ID,
+  require_auth: true,
+  properties: {
+    max_call_duration: 600,
+    apply_greenscreen: true,
+    context: pageContext
+  }
+};
 
   try {
     const response = await fetch("https://tavusapi.com/v2/conversations", {
