@@ -1,9 +1,16 @@
-const urlParams = new URLSearchParams(window.location.search);
-const pageContext = JSON.parse(urlParams.get("context") || "{}");
-
 (async function () {
   const stage = document.getElementById("agent-stage");
   const loading = document.getElementById("agent-loading");
+
+  const urlParams = new URLSearchParams(window.location.search);
+  let pageContext = {};
+
+  try {
+    pageContext = JSON.parse(urlParams.get("context") || "{}");
+  } catch (e) {
+    console.warn("Could not parse page context", e);
+    pageContext = {};
+  }
 
   let call;
   let hiddenVideo;
@@ -36,18 +43,7 @@ const pageContext = JSON.parse(urlParams.get("context") || "{}");
 
     if (canvas) {
       canvas.style.opacity = "1";
-
-      // 👇 wait until canvas is actually visible before showing logo
-setTimeout(() => {
-  if (logoEl) {
-    logoEl.style.opacity = "0.95";
-  }
-}, 220);
     }
-
-    if (logoEl) {
-  logoEl.style.opacity = "0.95";
-}
 
     if (loading) {
       loading.remove();
@@ -72,7 +68,10 @@ setTimeout(() => {
     if (canvas) {
       canvas.style.opacity = "0";
     }
-    
+
+    if (logoEl) {
+      logoEl.style.opacity = "0";
+    }
   }
 
   function animateLogo() {
@@ -80,9 +79,9 @@ setTimeout(() => {
 
     const t = performance.now() * 0.002;
 
-    const y = Math.sin(t) * 0.8;
-    const rotate = Math.sin(t * 0.7) * 0.4;
-    const scale = 1 + Math.sin(t * 0.5) * 0.005;
+    const y = Math.sin(t) * 0.4;
+    const rotate = Math.sin(t * 0.7) * 0.2;
+    const scale = 1 + Math.sin(t * 0.5) * 0.002;
 
     logoEl.style.transform = `
       translate(-50%, -50%)
@@ -157,6 +156,12 @@ setTimeout(() => {
 
             if (goodFrameCount >= 6) {
               markReady();
+
+              setTimeout(() => {
+                if (logoEl) {
+                  logoEl.style.opacity = "0.95";
+                }
+              }, 180);
             }
           }
         }
@@ -186,7 +191,13 @@ setTimeout(() => {
   async function initKaufBot() {
     try {
       const response = await fetch("https://growthmatixuk-kaufbot-widget.vercel.app/api/conversation", {
-        method: "POST"
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          pageContext
+        })
       });
 
       sessionData = await response.json();
