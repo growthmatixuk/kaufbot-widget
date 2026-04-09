@@ -39,7 +39,7 @@
       position: fixed;
       right: 24px;
       bottom: 24px;
-      width: 420px;
+      width: 460px;
       height: 620px;
       z-index: 999998;
       pointer-events: none;
