@@ -136,7 +136,7 @@
     <button id="kaufbot-close" aria-label="Close">×</button>
     <div id="kaufbot-stage-shell"></div>
     <div id="kaufbot-controls">
-      <button class="kaufbot-mini-btn" id="kaufbot-mic-toggle">Enable mic</button>
+      <button class="kaufbot-mini-btn" id="kaufbot-start-btn">Start talking</button>
     </div>
   `;
 
@@ -145,12 +145,12 @@
 
   const shell = wrap.querySelector("#kaufbot-stage-shell");
   const closeBtn = wrap.querySelector("#kaufbot-close");
-  const micBtn = wrap.querySelector("#kaufbot-mic-toggle");
+  const startBtn = wrap.querySelector("#kaufbot-start-btn");
 
   let mounted = false;
-  let micMuted = true;
   let agentReady = false;
   let hasAutoAppeared = false;
+  let micLive = false;
 
   function mountAgent() {
     if (mounted) return;
@@ -188,29 +188,35 @@
     wrap.classList.remove("visible");
     launcher.classList.remove("hidden");
     agentReady = false;
+    micLive = false;
 
     if (frame) {
       frame.classList.remove("ready");
     }
 
-    micMuted = true;
-    micBtn.textContent = "Enable mic";
+    startBtn.textContent = "Start talking";
   }
 
   launcher.addEventListener("click", openKaufbot);
   closeBtn.addEventListener("click", closeKaufbot);
 
-  micBtn.addEventListener("click", () => {
+  startBtn.addEventListener("click", () => {
     const frame = document.getElementById("kaufbot-agent-frame");
     if (!frame || !frame.contentWindow) return;
 
-    micMuted = !micMuted;
+    if (!micLive) {
+      micLive = true;
+      frame.contentWindow.postMessage({ type: "KAUFBOT_START_TALKING" }, "*");
+      startBtn.textContent = "Mute mic";
+      return;
+    }
+
+    micLive = !micLive;
     frame.contentWindow.postMessage(
-      { type: "KAUFBOT_TOGGLE_MIC", muted: micMuted },
+      { type: "KAUFBOT_TOGGLE_MIC", muted: !micLive },
       "*"
     );
-
-    micBtn.textContent = micMuted ? "Enable mic" : "Mute mic";
+    startBtn.textContent = micLive ? "Mute mic" : "Unmute mic";
   });
 
   window.addEventListener("message", (event) => {
