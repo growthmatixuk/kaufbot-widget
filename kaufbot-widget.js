@@ -355,6 +355,10 @@
     if (event.data.type === "KAUFBOT_READY") {
       agentReady = true;
 
+      if (event.data.type === "KAUFBOT_DEBUG_APP_MESSAGE") {
+  console.log("KAUFBOT DEBUG APP MESSAGE:", event.data.payload);
+}
+
       const frame = document.getElementById("kaufbot-agent-frame");
       frame?.classList.add("ready");
 
