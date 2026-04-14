@@ -98,7 +98,7 @@
     }
 
     #kaufbot-launcher img {
-      width: 320px;
+      width: 400px;
       max-width: 42vw;
       height: auto;
       display: block;
