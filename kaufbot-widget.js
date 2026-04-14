@@ -271,6 +271,7 @@
   let agentReady = false;
   let micLive = false;
   let currentSuggestedUrl = "";
+  let destroyTimer = null;
 
   function buildPageContext() {
     return {
@@ -323,48 +324,64 @@
     mounted = true;
   }
 
+  // Keep preloading for faster first open
   mountAgent();
 
- function openKaufbot() {
-  if (!mounted) {
-    mountAgent();
-  }
-
-  wrap.classList.add("visible");
-  launcher.classList.add("hidden");
-
-  const frame = document.getElementById("kaufbot-agent-frame");
-  if (agentReady) {
-    frame?.classList.add("ready");
-  } else {
-    frame?.classList.remove("ready");
-  }
-}
-
- function closeKaufbot() {
-  const frame = document.getElementById("kaufbot-agent-frame");
-
-  if (frame && frame.contentWindow) {
-    frame.contentWindow.postMessage({ type: "KAUFBOT_CLOSE_SELF" }, "*");
-  }
-
-  wrap.classList.remove("visible");
-  launcher.classList.remove("hidden");
-  micLive = false;
-  agentReady = false;
-
-  startBtn.textContent = "Start talking";
-  hideSuggestedLink();
-
-  // Remove the dead iframe so next open creates a fresh one
-  setTimeout(() => {
-    const oldFrame = document.getElementById("kaufbot-agent-frame");
-    if (oldFrame) {
-      oldFrame.remove();
+  function openKaufbot() {
+    if (destroyTimer) {
+      clearTimeout(destroyTimer);
+      destroyTimer = null;
     }
-    mounted = false;
-  }, 200);
-}
+
+    if (!mounted) {
+      mountAgent();
+    }
+
+    startBtn.textContent = "Start talking";
+    hideSuggestedLink();
+
+    wrap.classList.add("visible");
+    launcher.classList.add("hidden");
+
+    const frame = document.getElementById("kaufbot-agent-frame");
+    if (agentReady) {
+      frame?.classList.add("ready");
+    } else {
+      frame?.classList.remove("ready");
+    }
+  }
+
+  function closeKaufbot() {
+    wrap.classList.remove("visible");
+    launcher.classList.remove("hidden");
+    micLive = false;
+
+    startBtn.textContent = "Start talking";
+    hideSuggestedLink();
+
+    if (destroyTimer) {
+      clearTimeout(destroyTimer);
+    }
+
+    destroyTimer = setTimeout(() => {
+      const frame = document.getElementById("kaufbot-agent-frame");
+
+      if (frame && frame.contentWindow) {
+        frame.contentWindow.postMessage({ type: "KAUFBOT_CLOSE_SELF" }, "*");
+      }
+
+      setTimeout(() => {
+        const oldFrame = document.getElementById("kaufbot-agent-frame");
+        if (oldFrame) {
+          oldFrame.remove();
+        }
+
+        mounted = false;
+        agentReady = false;
+        destroyTimer = null;
+      }, 200);
+    }, 60000);
+  }
 
   launcher.addEventListener("click", openKaufbot);
   closeBtn.addEventListener("click", closeKaufbot);
