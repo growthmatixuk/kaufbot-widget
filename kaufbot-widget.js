@@ -341,23 +341,30 @@
   }
 }
 
-  function closeKaufbot() {
-    const frame = document.getElementById("kaufbot-agent-frame");
-    if (frame && frame.contentWindow) {
-      frame.contentWindow.postMessage({ type: "KAUFBOT_CLOSE_SELF" }, "*");
-    }
+ function closeKaufbot() {
+  const frame = document.getElementById("kaufbot-agent-frame");
 
-    wrap.classList.remove("visible");
-    launcher.classList.remove("hidden");
-    micLive = false;
-
-    if (frame) {
-      frame.classList.remove("ready");
-    }
-
-    startBtn.textContent = "Start talking";
-    hideSuggestedLink();
+  if (frame && frame.contentWindow) {
+    frame.contentWindow.postMessage({ type: "KAUFBOT_CLOSE_SELF" }, "*");
   }
+
+  wrap.classList.remove("visible");
+  launcher.classList.remove("hidden");
+  micLive = false;
+  agentReady = false;
+
+  startBtn.textContent = "Start talking";
+  hideSuggestedLink();
+
+  // Remove the dead iframe so next open creates a fresh one
+  setTimeout(() => {
+    const oldFrame = document.getElementById("kaufbot-agent-frame");
+    if (oldFrame) {
+      oldFrame.remove();
+    }
+    mounted = false;
+  }, 200);
+}
 
   launcher.addEventListener("click", openKaufbot);
   closeBtn.addEventListener("click", closeKaufbot);
