@@ -15,7 +15,9 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(204).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
   const { TAVUS_API_KEY, TAVUS_PERSONA_ID, TAVUS_REPLICA_ID } = process.env;
 
@@ -25,14 +27,24 @@ export default async function handler(req, res) {
 
   const { pageContext } = req.body || {};
 
+  // Build a plain string because Tavus expects conversational_context as text
+  const conversationalContext = [
+    pageContext?.title ? `Page title: ${pageContext.title}` : "",
+    pageContext?.h1 ? `Main heading: ${pageContext.h1}` : "",
+    pageContext?.path ? `Path: ${pageContext.path}` : "",
+    pageContext?.url ? `URL: ${pageContext.url}` : ""
+  ]
+    .filter(Boolean)
+    .join("\n");
+
   const tavusPayload = {
     replica_id: TAVUS_REPLICA_ID,
     persona_id: TAVUS_PERSONA_ID,
     require_auth: true,
+    conversational_context: conversationalContext,
     properties: {
       max_call_duration: 600,
-      apply_greenscreen: true,
-      context: pageContext || {}
+      apply_greenscreen: true
     }
   };
 
