@@ -74,140 +74,57 @@
   };
 
   const style = document.createElement("style");
-  style.innerHTML = `
+style.innerHTML = `
+  #kaufbot-launcher {
+    position: fixed;
+    right: 28px;
+    bottom: 28px;
+    z-index: 999999;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: transform 0.4s ease, opacity 0.4s ease;
+  }
+
+  #kaufbot-launcher img {
+    width: 290px;
+    max-width: 42vw;
+    height: auto;
+    display: block;
+    pointer-events: none;
+  }
+
+  #kaufbot-launcher.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  #kaufbot-launcher:hover {
+    transform: translateY(-6px) scale(1.03);
+  }
+
+  @keyframes kaufbotFloat {
+    0%   { transform: translateY(0px); }
+    50%  { transform: translateY(-5px); }
+    100% { transform: translateY(0px); }
+  }
+
+  #kaufbot-launcher img {
+    animation: kaufbotFloat 5s ease-in-out infinite;
+  }
+
+  @media (max-width: 768px) {
     #kaufbot-launcher {
-      position: fixed;
-      right: 20px;
-      bottom: 20px;
-      z-index: 999999;
-      background: #111;
-      color: #fff;
-      border: 0;
-      border-radius: 999px;
-      padding: 14px 20px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 12px 30px rgba(0,0,0,.25);
-      transition: opacity 0.2s ease, transform 0.2s ease;
+      right: 12px;
+      bottom: 12px;
     }
 
-    #kaufbot-launcher.hidden {
-      opacity: 0;
-      transform: translateY(8px);
-      pointer-events: none;
+    #kaufbot-launcher img {
+      width: 180px;
     }
-
-    #kaufbot-floating-wrap {
-      position: fixed;
-      right: 24px;
-      bottom: 24px;
-      width: 460px;
-      height: 620px;
-      z-index: 999998;
-      pointer-events: none;
-      opacity: 0;
-      transform: translateY(20px) scale(0.98);
-      transition:
-        opacity 0.35s ease,
-        transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    #kaufbot-floating-wrap.visible {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-      pointer-events: auto;
-    }
-
-    #kaufbot-stage-shell {
-      position: absolute;
-      inset: 0;
-      background: transparent;
-      pointer-events: none;
-    }
-
-    #kaufbot-agent-frame {
-      width: 100%;
-      height: 100%;
-      border: 0;
-      background: transparent;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-
-    #kaufbot-agent-frame.ready {
-      opacity: 1;
-    }
-
-    #kaufbot-close {
-      position: absolute;
-      top: 14px;
-      right: 8px;
-      width: 38px;
-      height: 38px;
-      border: 0;
-      border-radius: 999px;
-      background: rgba(0,0,0,.82);
-      color: #fff;
-      font-size: 20px;
-      cursor: pointer;
-      z-index: 4;
-      pointer-events: auto;
-    }
-
-    #kaufbot-controls {
-      position: absolute;
-      bottom: 18px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      z-index: 4;
-      pointer-events: auto;
-    }
-
-    .kaufbot-mini-btn {
-      border: 0;
-      border-radius: 999px;
-      padding: 10px 16px;
-      background: rgba(0,0,0,.82);
-      color: #fff;
-      cursor: pointer;
-      font-weight: 600;
-      backdrop-filter: blur(6px);
-    }
-
-    #kaufbot-link-btn {
-      display: none;
-      max-width: 280px;
-      white-space: normal;
-      text-align: center;
-      line-height: 1.25;
-      background: rgba(255,255,255,.94);
-      color: #111;
-      box-shadow: 0 10px 24px rgba(0,0,0,.18);
-    }
-
-    #kaufbot-link-btn.visible {
-      display: inline-block;
-    }
-
-    @media (max-width: 768px) {
-      #kaufbot-floating-wrap {
-        width: 320px;
-        height: 520px;
-        right: 8px;
-        bottom: 8px;
-      }
-
-      #kaufbot-link-btn {
-        max-width: 220px;
-      }
-    }
-  `;
-  document.head.appendChild(style);
+  }
+`;
+document.head.appendChild(style);
 
   const launcher = document.createElement("div");
 launcher.id = "kaufbot-launcher";
