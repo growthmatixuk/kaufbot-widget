@@ -261,184 +261,21 @@
         }
       });
 
-  call.on("app-message", (event) => {
+call.on("app-message", (event) => {
   try {
     const payload = event?.data || event;
-    if (!payload) return;
 
-    // Debug (keep this)
     if (window.parent !== window) {
       window.parent.postMessage({
         type: "KAUFBOT_DEBUG_APP_MESSAGE",
         payload
       }, "*");
     }
-
-    // Only listen for utterances
-    if (payload.event_type !== "conversation.utterance") return;
-
-    // ✅ NEW: Detect USER speech properly
-    const isUser =
-      payload?.properties?.speaker === "user" ||
-      payload?.speaker === "user";
-
-    if (!isUser) return;
-
-    const text = (
-      payload?.properties?.speech ||
-      payload?.properties?.text ||
-      payload?.speech ||
-      payload?.text ||
-      ""
-    ).toLowerCase().trim();
-
-    if (!text) return;
-
-    console.log("USER SAID:", text);
-
-    // Intent detection (same as before)
-    const requestIntent =
-      text.includes("show me") ||
-      text.includes("take me to") ||
-      text.includes("looking for") ||
-      text.includes("do you have") ||
-      text.includes("can i see") ||
-      text.includes("can you show me") ||
-      text.includes("where are") ||
-      text.includes("i need") ||
-      text.includes("i want") ||
-      text.includes("browse");
-
-    if (!requestIntent) {
-      window.parent.postMessage({
-        type: "KAUFBOT_CLEAR_LINK"
-      }, "*");
-      return;
-    }
-
-    // CATEGORY MATCHES
-
-    if (text.includes("headshot")) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "headshot"
-      }, "*");
-      return;
-    }
-
-    if (text.includes("newborn") || text.includes("baby")) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "newborn-kids-and-seniors"
-      }, "*");
-      return;
-    }
-
-    if (text.includes("fine art") || text.includes("texture")) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "masters-textures-and-fine-art"
-      }, "*");
-      return;
-    }
-
-    if (text.includes("exterior") || text.includes("outdoor")) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "exterior"
-      }, "*");
-      return;
-    }
-
-    if (text.includes("floor")) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "floors"
-      }, "*");
-      return;
-    }
-
-    if (text.includes("solid") || text.includes("seamless")) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "solid-seamless"
-      }, "*");
-      return;
-    }
-
-    if (text.includes("interior") || text.includes("room")) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "interior"
-      }, "*");
-      return;
-    }
-
-    if (text.includes("signature")) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "signature-collections"
-      }, "*");
-      return;
-    }
-
-    if (text.includes("holiday") || text.includes("christmas")) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "holidays"
-      }, "*");
-      return;
-    }
-
-    if (text.includes("floral") || text.includes("flower")) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "floral"
-      }, "*");
-      return;
-    }
-
-    if (text.includes("clicki")) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "clicki"
-      }, "*");
-      return;
-    }
-
-    if (text.includes("magna")) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "magna-fix"
-      }, "*");
-      return;
-    }
-
-    if (text.includes("clearance") || text.includes("sale")) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "clearance"
-      }, "*");
-      return;
-    }
-
-    if (text.includes("roller")) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "roller-systems"
-      }, "*");
-      return;
-    }
-
-    window.parent.postMessage({
-      type: "KAUFBOT_CLEAR_LINK"
-    }, "*");
-
   } catch (e) {
     console.warn("CTA detection error", e);
   }
 });
-
+      
       call.on("left-meeting", () => {
         joined = false;
         resetReadyState();
