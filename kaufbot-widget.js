@@ -349,33 +349,32 @@
     window.location.href = currentSuggestedUrl;
   });
 
-  window.addEventListener("message", (event) => {
-    if (!event.data) return;
+window.addEventListener("message", (event) => {
+  if (!event.data) return;
 
-    if (event.data.type === "KAUFBOT_READY") {
-      agentReady = true;
+  if (event.data.type === "KAUFBOT_DEBUG_APP_MESSAGE") {
+    console.log("KAUFBOT DEBUG APP MESSAGE:", event.data.payload);
+  }
 
-      if (event.data.type === "KAUFBOT_DEBUG_APP_MESSAGE") {
-  console.log("KAUFBOT DEBUG APP MESSAGE:", event.data.payload);
-}
+  if (event.data.type === "KAUFBOT_READY") {
+    agentReady = true;
 
-      const frame = document.getElementById("kaufbot-agent-frame");
-      frame?.classList.add("ready");
+    const frame = document.getElementById("kaufbot-agent-frame");
+    frame?.classList.add("ready");
 
-      if (!hasAutoAppeared) {
-        hasAutoAppeared = true;
-        setTimeout(() => {
-          openKaufbot();
-        }, 450);
-      }
+    if (!hasAutoAppeared) {
+      hasAutoAppeared = true;
+      setTimeout(() => {
+        openKaufbot();
+      }, 450);
     }
+  }
 
-    if (event.data.type === "KAUFBOT_SUGGEST_LINK") {
-      showSuggestedLink(event.data);
-    }
+  if (event.data.type === "KAUFBOT_SUGGEST_LINK") {
+    showSuggestedLink(event.data);
+  }
 
-    if (event.data.type === "KAUFBOT_CLEAR_LINK") {
-      hideSuggestedLink();
-    }
-  });
-})();
+  if (event.data.type === "KAUFBOT_CLEAR_LINK") {
+    hideSuggestedLink();
+  }
+});
