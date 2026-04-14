@@ -325,17 +325,21 @@
 
   mountAgent();
 
-  function openKaufbot() {
-    wrap.classList.add("visible");
-    launcher.classList.add("hidden");
-
-    const frame = document.getElementById("kaufbot-agent-frame");
-    if (agentReady) {
-      frame?.classList.add("ready");
-    } else {
-      frame?.classList.remove("ready");
-    }
+ function openKaufbot() {
+  if (!mounted) {
+    mountAgent();
   }
+
+  wrap.classList.add("visible");
+  launcher.classList.add("hidden");
+
+  const frame = document.getElementById("kaufbot-agent-frame");
+  if (agentReady) {
+    frame?.classList.add("ready");
+  } else {
+    frame?.classList.remove("ready");
+  }
+}
 
   function closeKaufbot() {
     const frame = document.getElementById("kaufbot-agent-frame");
