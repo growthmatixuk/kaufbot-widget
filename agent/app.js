@@ -261,6 +261,68 @@
         }
       });
 
+      call.on("app-message", (msg) => {
+  try {
+    const text =
+      msg?.data?.properties?.text?.toLowerCase?.() || "";
+
+    if (!text) return;
+
+    // HEADSHOT
+    if (text.includes("headshot")) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "headshot"
+      }, "*");
+      return;
+    }
+
+    // NEWBORN / KIDS
+    if (text.includes("newborn") || text.includes("baby") || text.includes("kids")) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "newborn-kids-and-seniors"
+      }, "*");
+      return;
+    }
+
+    // HOLIDAYS
+    if (text.includes("christmas") || text.includes("holiday")) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "holidays"
+      }, "*");
+      return;
+    }
+
+    // FLORAL
+    if (text.includes("floral") || text.includes("flowers")) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "floral"
+      }, "*");
+      return;
+    }
+
+    // CLEARANCE
+    if (text.includes("sale") || text.includes("clearance")) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "clearance"
+      }, "*");
+      return;
+    }
+
+    // fallback: hide if irrelevant
+    window.parent.postMessage({
+      type: "KAUFBOT_CLEAR_LINK"
+    }, "*");
+
+  } catch (e) {
+    console.warn("CTA detection error", e);
+  }
+});
+
       call.on("left-meeting", () => {
         joined = false;
         resetReadyState();
