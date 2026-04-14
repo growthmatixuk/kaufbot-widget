@@ -603,24 +603,66 @@ call.on("app-message", (event) => {
   await initKaufBot();
   await joinKaufBot();
 
-  window.addEventListener("message", async (event) => {
-    if (!event.data) return;
+ window.addEventListener("message", async (event) => {
+  if (!event.data) return;
 
-    if (event.data.type === "KAUFBOT_START_TALKING" && call && joined) {
-      conversationActivated = true;
-      micMuted = false;
-
-      await call.setLocalAudio(true);
-      await sendWelcomeMessage();
+  if (event.data.type === "KAUFBOT_PLAY_GREETING" && call && joined) {
+    // make sure KaufBot can be heard, but keep user mic off
+    if (hiddenAudio) {
+      hiddenAudio.muted = false;
+      hiddenAudio.volume = 1;
+      hiddenAudio.play().catch(() => {});
     }
 
-    if (event.data.type === "KAUFBOT_TOGGLE_MIC" && call && joined && conversationActivated) {
-      micMuted = !!event.data.muted;
-      await call.setLocalAudio(!micMuted);
+    micMuted = true;
+    await call.setLocalAudio(false);
+    await sendWelcomeMessage();
+    return;
+  }
+
+  if (event.data.type === "KAUFBOT_START_TALKING" && call && joined) {
+    conversationActivated = true;
+    micMuted = false;
+
+    if (hiddenAudio) {
+      hiddenAudio.muted = false;
+      hiddenAudio.volume = 1;
+      hiddenAudio.play().catch(() => {});
     }
 
-    if (event.data.type === "KAUFBOT_CLOSE_SELF") {
-      await leaveKaufBot();
+    await call.setLocalAudio(true);
+    return;
+  }
+
+  if (event.data.type === "KAUFBOT_TOGGLE_MIC" && call && joined) {
+    micMuted = !!event.data.muted;
+    await call.setLocalAudio(!micMuted);
+    return;
+  }
+
+  if (event.data.type === "KAUFBOT_PANEL_CLOSED") {
+    if (hiddenAudio) {
+      hiddenAudio.muted = true;
     }
-  });
+
+    micMuted = true;
+    if (call && joined) {
+      await call.setLocalAudio(false);
+    }
+    return;
+  }
+
+  if (event.data.type === "KAUFBOT_PANEL_OPENED") {
+    if (hiddenAudio) {
+      hiddenAudio.muted = false;
+      hiddenAudio.volume = 1;
+      hiddenAudio.play().catch(() => {});
+    }
+    return;
+  }
+
+  if (event.data.type === "KAUFBOT_CLOSE_SELF") {
+    await leaveKaufBot();
+  }
+});
 })();
