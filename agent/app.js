@@ -261,27 +261,38 @@
         }
       });
 
-     call.on("app-message", (event) => {
+    call.on("app-message", (event) => {
   try {
-    const payload = event?.data;
+    // Forward raw payload to parent page so you can inspect it in the main console
+    if (window.parent !== window) {
+      window.parent.postMessage({
+        type: "KAUFBOT_DEBUG_APP_MESSAGE",
+        payload: event
+      }, "*");
+    }
 
-    // Tavus sends utterance events over Daily app-message
-    if (!payload || payload.event_type !== "conversation.utterance") return;
+    const payload = event?.data || event;
 
-    // We only care about what KaufBot / the replica said
-    if (payload.role !== "replica") return;
+    if (!payload) return;
 
-    const text = (payload.properties?.speech || "").toLowerCase();
+    // Try several possible text locations
+    const text =
+      payload?.properties?.speech ||
+      payload?.properties?.text ||
+      payload?.speech ||
+      payload?.text ||
+      "";
 
-    if (!text) return;
+    const lower = String(text).toLowerCase();
 
-    // Headshots
+    if (!lower) return;
+
     if (
-      text.includes("headshot") ||
-      text.includes("headshots") ||
-      text.includes("corporate portrait") ||
-      text.includes("professional portrait") ||
-      text.includes("linkedin")
+      lower.includes("headshot") ||
+      lower.includes("headshots") ||
+      lower.includes("corporate portrait") ||
+      lower.includes("professional portrait") ||
+      lower.includes("linkedin")
     ) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
@@ -290,14 +301,13 @@
       return;
     }
 
-    // Newborn / kids / seniors
     if (
-      text.includes("newborn") ||
-      text.includes("baby") ||
-      text.includes("babies") ||
-      text.includes("kids") ||
-      text.includes("children") ||
-      text.includes("seniors")
+      lower.includes("newborn") ||
+      lower.includes("baby") ||
+      lower.includes("babies") ||
+      lower.includes("kids") ||
+      lower.includes("children") ||
+      lower.includes("seniors")
     ) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
@@ -306,12 +316,11 @@
       return;
     }
 
-    // Fine art / textures
     if (
-      text.includes("fine art") ||
-      text.includes("texture") ||
-      text.includes("textured") ||
-      text.includes("masters")
+      lower.includes("fine art") ||
+      lower.includes("texture") ||
+      lower.includes("textured") ||
+      lower.includes("masters")
     ) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
@@ -320,11 +329,10 @@
       return;
     }
 
-    // Exterior
     if (
-      text.includes("exterior") ||
-      text.includes("outdoor") ||
-      text.includes("outside")
+      lower.includes("exterior") ||
+      lower.includes("outdoor") ||
+      lower.includes("outside")
     ) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
@@ -333,10 +341,9 @@
       return;
     }
 
-    // Floors
     if (
-      text.includes("floor") ||
-      text.includes("floors")
+      lower.includes("floor") ||
+      lower.includes("floors")
     ) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
@@ -345,12 +352,11 @@
       return;
     }
 
-    // Solid / seamless
     if (
-      text.includes("solid") ||
-      text.includes("seamless") ||
-      text.includes("plain backdrop") ||
-      text.includes("plain background")
+      lower.includes("solid") ||
+      lower.includes("seamless") ||
+      lower.includes("plain backdrop") ||
+      lower.includes("plain background")
     ) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
@@ -359,11 +365,10 @@
       return;
     }
 
-    // Interior
     if (
-      text.includes("interior") ||
-      text.includes("indoors") ||
-      text.includes("room backdrop")
+      lower.includes("interior") ||
+      lower.includes("indoors") ||
+      lower.includes("room backdrop")
     ) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
@@ -372,10 +377,9 @@
       return;
     }
 
-    // Signature collections
     if (
-      text.includes("signature") ||
-      text.includes("signature collection")
+      lower.includes("signature") ||
+      lower.includes("signature collection")
     ) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
@@ -384,14 +388,13 @@
       return;
     }
 
-    // Holidays
     if (
-      text.includes("holiday") ||
-      text.includes("christmas") ||
-      text.includes("seasonal") ||
-      text.includes("halloween") ||
-      text.includes("easter") ||
-      text.includes("valentine")
+      lower.includes("holiday") ||
+      lower.includes("christmas") ||
+      lower.includes("seasonal") ||
+      lower.includes("halloween") ||
+      lower.includes("easter") ||
+      lower.includes("valentine")
     ) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
@@ -400,12 +403,11 @@
       return;
     }
 
-    // Floral
     if (
-      text.includes("floral") ||
-      text.includes("flower") ||
-      text.includes("flowers") ||
-      text.includes("botanical")
+      lower.includes("floral") ||
+      lower.includes("flower") ||
+      lower.includes("flowers") ||
+      lower.includes("botanical")
     ) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
@@ -414,8 +416,7 @@
       return;
     }
 
-    // Clicki
-    if (text.includes("clicki")) {
+    if (lower.includes("clicki")) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
         slug: "clicki"
@@ -423,11 +424,10 @@
       return;
     }
 
-    // Magna Fix
     if (
-      text.includes("magna fix") ||
-      text.includes("magna-fix") ||
-      text.includes("magnetic system")
+      lower.includes("magna fix") ||
+      lower.includes("magna-fix") ||
+      lower.includes("magnetic system")
     ) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
@@ -436,12 +436,11 @@
       return;
     }
 
-    // Clearance
     if (
-      text.includes("clearance") ||
-      text.includes("sale") ||
-      text.includes("discount") ||
-      text.includes("reduced")
+      lower.includes("clearance") ||
+      lower.includes("sale") ||
+      lower.includes("discount") ||
+      lower.includes("reduced")
     ) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
@@ -450,11 +449,10 @@
       return;
     }
 
-    // Roller systems
     if (
-      text.includes("roller system") ||
-      text.includes("roller systems") ||
-      text.includes("backdrop roller")
+      lower.includes("roller system") ||
+      lower.includes("roller systems") ||
+      lower.includes("backdrop roller")
     ) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
@@ -463,7 +461,6 @@
       return;
     }
 
-    // If KaufBot's reply isn't clearly pointing at one category, hide the CTA
     window.parent.postMessage({
       type: "KAUFBOT_CLEAR_LINK"
     }, "*");
