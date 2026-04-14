@@ -428,12 +428,19 @@ function openKaufbot() {
     }
 
     if (event.data.type === "KAUFBOT_READY") {
-      agentReady = true;
+  agentReady = true;
 
-      const frame = document.getElementById("kaufbot-agent-frame");
-      frame?.classList.add("ready");
-      return;
-    }
+  const frame = document.getElementById("kaufbot-agent-frame");
+  frame?.classList.add("ready");
+
+  // If KaufBot is already visible when he becomes ready,
+  // trigger the greeting at the correct moment
+  if (wrap.classList.contains("visible") && frame && frame.contentWindow) {
+    frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
+  }
+
+  return;
+}
 
     if (event.data.type === "KAUFBOT_SUGGEST_LINK") {
       showSuggestedLink(event.data);
