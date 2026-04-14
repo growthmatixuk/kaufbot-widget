@@ -378,3 +378,4 @@ window.addEventListener("message", (event) => {
     hideSuggestedLink();
   }
 });
+})();
