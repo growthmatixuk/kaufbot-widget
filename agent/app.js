@@ -34,7 +34,7 @@
   let conversationActivated = false;
 
   const WELCOME_TEXT =
-    "Hi, I’m KaufBot. Welcome to Click Backdrops. Click 'Start talking' and let’s chat.";
+    "Hi, I’m KaufBot. Welcome to Click Backdrops. Click 'Start talking' and I’ll help you find the perfect backdrop."
 
   function markReady() {
   if (kaufbotReady) return;
