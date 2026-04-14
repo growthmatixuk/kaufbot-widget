@@ -209,9 +209,12 @@
   `;
   document.head.appendChild(style);
 
-  const launcher = document.createElement("button");
-  launcher.id = "kaufbot-launcher";
-  launcher.textContent = "Talk to KaufBot";
+  const launcher = document.createElement("div");
+launcher.id = "kaufbot-launcher";
+
+launcher.innerHTML = `
+  <img src="https://i.postimg.cc/zXKCMfrh/I-m-Kauf-Bot-Click-to-talk-to-me.png" alt="Talk to KaufBot" />
+`;
 
   const wrap = document.createElement("div");
   wrap.id = "kaufbot-floating-wrap";
