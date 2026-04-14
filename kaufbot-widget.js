@@ -270,6 +270,7 @@
   let mounted = false;
   let agentReady = false;
   let micLive = false;
+  let greetingPlayedForOpen = false;
   let currentSuggestedUrl = "";
   let destroyTimer = null;
 
@@ -340,6 +341,7 @@ function openKaufbot() {
   startBtn.textContent = "Start talking";
   hideSuggestedLink();
 
+  greetingPlayedForOpen = false;
   wrap.classList.add("visible");
   launcher.classList.add("hidden");
 
@@ -350,14 +352,15 @@ function openKaufbot() {
   }
 
   if (agentReady) {
-    frame?.classList.add("ready");
+  frame?.classList.add("ready");
 
-    if (frame && frame.contentWindow) {
-      frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
-    }
-  } else {
-    frame?.classList.remove("ready");
+  if (!greetingPlayedForOpen && frame && frame.contentWindow) {
+    greetingPlayedForOpen = true;
+    frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
   }
+} else {
+  frame?.classList.remove("ready");
+}
 }
 
   function closeKaufbot() {
@@ -435,9 +438,10 @@ function openKaufbot() {
 
   // If KaufBot is already visible when he becomes ready,
   // trigger the greeting at the correct moment
-  if (wrap.classList.contains("visible") && frame && frame.contentWindow) {
-    frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
-  }
+if (wrap.classList.contains("visible") && !greetingPlayedForOpen && frame && frame.contentWindow) {
+  greetingPlayedForOpen = true;
+  frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
+}
 
   return;
 }
