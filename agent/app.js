@@ -279,10 +279,10 @@ call.on("app-message", (event) => {
       return;
     }
 
-    // Only react to USER speech, not KaufBot speech
+    // IMPORTANT: Tavus uses properties.role
     const isUser =
-      payload?.properties?.speaker === "user" ||
-      payload?.speaker === "user";
+      payload?.properties?.role === "user" ||
+      payload?.role === "user";
 
     if (!isUser) return;
 
@@ -298,18 +298,26 @@ call.on("app-message", (event) => {
 
     console.log("USER SAID:", text);
 
-    // Only show CTA when user is clearly asking to see / browse / find something
+    // Broader browse / show intent
     const requestIntent =
       text.includes("show me") ||
       text.includes("take me to") ||
+      text.includes("take a look") ||
+      text.includes("look at") ||
       text.includes("looking for") ||
+      text.includes("looking") ||
       text.includes("do you have") ||
       text.includes("can i see") ||
       text.includes("can you show me") ||
       text.includes("where are") ||
       text.includes("i need") ||
       text.includes("i want") ||
-      text.includes("browse");
+      text.includes("browse") ||
+      text.includes("range") ||
+      text.includes("collection") ||
+      text.includes("collections") ||
+      text.includes("options") ||
+      text.includes("see");
 
     if (!requestIntent) {
       window.parent.postMessage({
@@ -340,6 +348,7 @@ call.on("app-message", (event) => {
       text.includes("babies") ||
       text.includes("kids") ||
       text.includes("children") ||
+      text.includes("child") ||
       text.includes("seniors")
     ) {
       window.parent.postMessage({
@@ -353,6 +362,7 @@ call.on("app-message", (event) => {
     if (
       text.includes("fine art") ||
       text.includes("texture") ||
+      text.includes("textures") ||
       text.includes("textured") ||
       text.includes("masters")
     ) {
