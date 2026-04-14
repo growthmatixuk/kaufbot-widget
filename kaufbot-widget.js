@@ -14,6 +14,65 @@
     return;
   }
 
+  const PAGE_MAP = {
+    "newborn-kids-and-seniors": {
+      label: "View Newborn, Kids & Seniors Backdrops",
+      url: "https://clickbackdrops.co.uk/product-category/backdrops/newborn-kids-and-seniors"
+    },
+    "headshot": {
+      label: "View Headshot Backdrops",
+      url: "https://clickbackdrops.co.uk/product-category/backdrops/headshot"
+    },
+    "masters-textures-and-fine-art": {
+      label: "View Fine Art & Texture Backdrops",
+      url: "https://clickbackdrops.co.uk/product-category/backdrops/masters-textures-and-fine-art"
+    },
+    "exterior": {
+      label: "View Exterior Backdrops",
+      url: "https://clickbackdrops.co.uk/product-category/backdrops/exterior"
+    },
+    "floors": {
+      label: "View Floors",
+      url: "https://clickbackdrops.co.uk/product-category/backdrops/floors"
+    },
+    "solid-seamless": {
+      label: "View Solid & Seamless Backdrops",
+      url: "https://clickbackdrops.co.uk/product-category/backdrops/solid-seamless"
+    },
+    "interior": {
+      label: "View Interior Backdrops",
+      url: "https://clickbackdrops.co.uk/product-category/backdrops/interior"
+    },
+    "signature-collections": {
+      label: "View Signature Collections",
+      url: "https://clickbackdrops.co.uk/product-category/backdrops/signature-collections"
+    },
+    "holidays": {
+      label: "View Holiday Backdrops",
+      url: "https://clickbackdrops.co.uk/product-category/backdrops/holidays"
+    },
+    "floral": {
+      label: "View Floral Backdrops",
+      url: "https://clickbackdrops.co.uk/product-category/backdrops/floral"
+    },
+    "clicki": {
+      label: "View Clicki",
+      url: "https://clickbackdrops.co.uk/product-category/clicki"
+    },
+    "magna-fix": {
+      label: "View Magna Fix",
+      url: "https://clickbackdrops.co.uk/product-category/magna-fix"
+    },
+    "clearance": {
+      label: "View Clearance",
+      url: "https://clickbackdrops.co.uk/product-category/clearance"
+    },
+    "roller-systems": {
+      label: "View Roller Systems",
+      url: "https://clickbackdrops.co.uk/product-category/roller-systems"
+    }
+  };
+
   const style = document.createElement("style");
   style.innerHTML = `
     #kaufbot-launcher {
@@ -102,6 +161,8 @@
       left: 50%;
       transform: translateX(-50%);
       display: flex;
+      flex-direction: column;
+      align-items: center;
       gap: 8px;
       z-index: 4;
       pointer-events: auto;
@@ -118,12 +179,31 @@
       backdrop-filter: blur(6px);
     }
 
+    #kaufbot-link-btn {
+      display: none;
+      max-width: 280px;
+      white-space: normal;
+      text-align: center;
+      line-height: 1.25;
+      background: rgba(255,255,255,.94);
+      color: #111;
+      box-shadow: 0 10px 24px rgba(0,0,0,.18);
+    }
+
+    #kaufbot-link-btn.visible {
+      display: inline-block;
+    }
+
     @media (max-width: 768px) {
       #kaufbot-floating-wrap {
         width: 320px;
         height: 520px;
         right: 8px;
         bottom: 8px;
+      }
+
+      #kaufbot-link-btn {
+        max-width: 220px;
       }
     }
   `;
@@ -139,6 +219,7 @@
     <button id="kaufbot-close" aria-label="Close">×</button>
     <div id="kaufbot-stage-shell"></div>
     <div id="kaufbot-controls">
+      <button class="kaufbot-mini-btn" id="kaufbot-link-btn"></button>
       <button class="kaufbot-mini-btn" id="kaufbot-start-btn">Start talking</button>
     </div>
   `;
@@ -149,11 +230,13 @@
   const shell = wrap.querySelector("#kaufbot-stage-shell");
   const closeBtn = wrap.querySelector("#kaufbot-close");
   const startBtn = wrap.querySelector("#kaufbot-start-btn");
+  const linkBtn = wrap.querySelector("#kaufbot-link-btn");
 
   let mounted = false;
   let agentReady = false;
   let hasAutoAppeared = false;
   let micLive = false;
+  let currentSuggestedUrl = "";
 
   function buildPageContext() {
     return {
@@ -162,6 +245,30 @@
       title: document.title,
       h1: document.querySelector("h1")?.innerText || ""
     };
+  }
+
+  function showSuggestedLink(payload) {
+    if (!payload) return;
+
+    let url = payload.url || "";
+    let label = payload.label || "View suggested page";
+
+    if (!url && payload.slug && PAGE_MAP[payload.slug]) {
+      url = PAGE_MAP[payload.slug].url;
+      label = payload.label || PAGE_MAP[payload.slug].label;
+    }
+
+    if (!url) return;
+
+    currentSuggestedUrl = url;
+    linkBtn.textContent = label;
+    linkBtn.classList.add("visible");
+  }
+
+  function hideSuggestedLink() {
+    currentSuggestedUrl = "";
+    linkBtn.textContent = "";
+    linkBtn.classList.remove("visible");
   }
 
   function mountAgent() {
@@ -212,6 +319,7 @@
     }
 
     startBtn.textContent = "Start talking";
+    hideSuggestedLink();
   }
 
   launcher.addEventListener("click", openKaufbot);
@@ -236,6 +344,11 @@
     startBtn.textContent = micLive ? "Mute mic" : "Unmute mic";
   });
 
+  linkBtn.addEventListener("click", () => {
+    if (!currentSuggestedUrl) return;
+    window.location.href = currentSuggestedUrl;
+  });
+
   window.addEventListener("message", (event) => {
     if (!event.data) return;
 
@@ -251,6 +364,14 @@
           openKaufbot();
         }, 450);
       }
+    }
+
+    if (event.data.type === "KAUFBOT_SUGGEST_LINK") {
+      showSuggestedLink(event.data);
+    }
+
+    if (event.data.type === "KAUFBOT_CLEAR_LINK") {
+      hideSuggestedLink();
     }
   });
 })();
