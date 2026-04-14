@@ -337,20 +337,24 @@ function openKaufbot() {
     mountAgent();
   }
 
-  startBtn.textContent = micLive ? "Mute mic" : "Start talking";
+  startBtn.textContent = "Start talking";
   hideSuggestedLink();
-
-  const frame = document.getElementById("kaufbot-agent-frame");
-  if (frame && frame.contentWindow) {
-    frame.contentWindow.postMessage({ type: "KAUFBOT_PANEL_OPENED" }, "*");
-    frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
-  }
 
   wrap.classList.add("visible");
   launcher.classList.add("hidden");
 
+  const frame = document.getElementById("kaufbot-agent-frame");
+
+  if (frame && frame.contentWindow) {
+    frame.contentWindow.postMessage({ type: "KAUFBOT_PANEL_OPENED" }, "*");
+  }
+
   if (agentReady) {
     frame?.classList.add("ready");
+
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
+    }
   } else {
     frame?.classList.remove("ready");
   }
