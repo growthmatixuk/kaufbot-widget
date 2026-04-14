@@ -37,23 +37,29 @@
     "Hi, welcome to Click Backdrops. I’m KaufBot. Tell me what you’re looking for and I’ll help you find the right backdrop. If your browser asks for microphone access, allow it so I can hear you properly.";
 
   function markReady() {
-    if (kaufbotReady) return;
+  if (kaufbotReady) return;
 
-    kaufbotReady = true;
+  kaufbotReady = true;
 
-    if (canvas) {
-      canvas.style.opacity = "1";
-    }
-
-    if (loading) {
-      loading.remove();
-    }
-
-    if (!sentReadyMessage && window.parent !== window) {
-      sentReadyMessage = true;
-      window.parent.postMessage({ type: "KAUFBOT_READY" }, "*");
-    }
+  if (canvas) {
+    canvas.style.opacity = "1";
   }
+
+  // ✅ ADD THIS
+  const logo = document.getElementById("kaufbot-logo");
+  if (logo) {
+    logo.style.opacity = "1";
+  }
+
+  if (loading) {
+    loading.remove();
+  }
+
+  if (!sentReadyMessage && window.parent !== window) {
+    sentReadyMessage = true;
+    window.parent.postMessage({ type: "KAUFBOT_READY" }, "*");
+  }
+}
 
   function resetReadyState() {
     kaufbotReady = false;
