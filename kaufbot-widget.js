@@ -267,12 +267,12 @@
   const startBtn = wrap.querySelector("#kaufbot-start-btn");
   const linkBtn = wrap.querySelector("#kaufbot-link-btn");
 
-  let mounted = false;
-  let agentReady = false;
-  let micLive = false;
-  let greetingPlayedForOpen = false;
-  let currentSuggestedUrl = "";
-  let destroyTimer = null;
+let mounted = false;
+let agentReady = false;
+let micLive = false;
+let currentSuggestedUrl = "";
+let destroyTimer = null;
+let hasPlayedGreeting = false;
 
   function buildPageContext() {
     return {
@@ -341,7 +341,6 @@ function openKaufbot() {
   startBtn.textContent = "Start talking";
   hideSuggestedLink();
 
-  greetingPlayedForOpen = false;
   wrap.classList.add("visible");
   launcher.classList.add("hidden");
 
@@ -352,15 +351,15 @@ function openKaufbot() {
   }
 
   if (agentReady) {
-  frame?.classList.add("ready");
+    frame?.classList.add("ready");
 
-  if (!greetingPlayedForOpen && frame && frame.contentWindow) {
-    greetingPlayedForOpen = true;
-    frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
+    if (!hasPlayedGreeting && frame && frame.contentWindow) {
+      hasPlayedGreeting = true;
+      frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
+    }
+  } else {
+    frame?.classList.remove("ready");
   }
-} else {
-  frame?.classList.remove("ready");
-}
 }
 
   function closeKaufbot() {
@@ -436,12 +435,15 @@ function openKaufbot() {
   const frame = document.getElementById("kaufbot-agent-frame");
   frame?.classList.add("ready");
 
-  // If KaufBot is already visible when he becomes ready,
-  // trigger the greeting at the correct moment
-if (wrap.classList.contains("visible") && !greetingPlayedForOpen && frame && frame.contentWindow) {
-  greetingPlayedForOpen = true;
-  frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
-}
+  if (
+    wrap.classList.contains("visible") &&
+    !hasPlayedGreeting &&
+    frame &&
+    frame.contentWindow
+  ) {
+    hasPlayedGreeting = true;
+    frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
+  }
 
   return;
 }
