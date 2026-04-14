@@ -267,12 +267,12 @@
   const startBtn = wrap.querySelector("#kaufbot-start-btn");
   const linkBtn = wrap.querySelector("#kaufbot-link-btn");
 
-let mounted = false;
-let agentReady = false;
-let micLive = false;
-let currentSuggestedUrl = "";
-let destroyTimer = null;
-let hasPlayedGreeting = false;
+  let mounted = false;
+  let agentReady = false;
+  let micLive = false;
+  let currentSuggestedUrl = "";
+  let destroyTimer = null;
+  let hasPlayedGreeting = false;
 
   function buildPageContext() {
     return {
@@ -325,44 +325,50 @@ let hasPlayedGreeting = false;
     mounted = true;
   }
 
-  // Keep preloading for faster first open
+  // Preload for faster first open
   mountAgent();
 
-function openKaufbot() {
-  if (destroyTimer) {
-    clearTimeout(destroyTimer);
-    destroyTimer = null;
-  }
-
-  if (!mounted) {
-    mountAgent();
-  }
-
-  startBtn.textContent = "Start talking";
-  hideSuggestedLink();
-
-  wrap.classList.add("visible");
-  launcher.classList.add("hidden");
-
-  const frame = document.getElementById("kaufbot-agent-frame");
-
-  if (frame && frame.contentWindow) {
-    frame.contentWindow.postMessage({ type: "KAUFBOT_PANEL_OPENED" }, "*");
-  }
-
-  if (agentReady) {
-    frame?.classList.add("ready");
-
-    if (!hasPlayedGreeting && frame && frame.contentWindow) {
-      hasPlayedGreeting = true;
-      frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
+  function openKaufbot() {
+    if (destroyTimer) {
+      clearTimeout(destroyTimer);
+      destroyTimer = null;
     }
-  } else {
-    frame?.classList.remove("ready");
+
+    if (!mounted) {
+      mountAgent();
+    }
+
+    startBtn.textContent = "Start talking";
+    hideSuggestedLink();
+
+    wrap.classList.add("visible");
+    launcher.classList.add("hidden");
+
+    const frame = document.getElementById("kaufbot-agent-frame");
+
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.postMessage({ type: "KAUFBOT_PANEL_OPENED" }, "*");
+    }
+
+    if (agentReady) {
+      frame?.classList.add("ready");
+
+      if (!hasPlayedGreeting && frame && frame.contentWindow) {
+        hasPlayedGreeting = true;
+        frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
+      }
+    } else {
+      frame?.classList.remove("ready");
+    }
   }
-}
 
   function closeKaufbot() {
+    const frame = document.getElementById("kaufbot-agent-frame");
+
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.postMessage({ type: "KAUFBOT_PANEL_CLOSED" }, "*");
+    }
+
     wrap.classList.remove("visible");
     launcher.classList.remove("hidden");
     micLive = false;
@@ -375,10 +381,10 @@ function openKaufbot() {
     }
 
     destroyTimer = setTimeout(() => {
-      const frame = document.getElementById("kaufbot-agent-frame");
+      const frameToDestroy = document.getElementById("kaufbot-agent-frame");
 
-      if (frame && frame.contentWindow) {
-        frame.contentWindow.postMessage({ type: "KAUFBOT_CLOSE_SELF" }, "*");
+      if (frameToDestroy && frameToDestroy.contentWindow) {
+        frameToDestroy.contentWindow.postMessage({ type: "KAUFBOT_CLOSE_SELF" }, "*");
       }
 
       setTimeout(() => {
@@ -390,6 +396,7 @@ function openKaufbot() {
         mounted = false;
         agentReady = false;
         destroyTimer = null;
+        hasPlayedGreeting = false;
       }, 200);
     }, 60000);
   }
@@ -430,23 +437,23 @@ function openKaufbot() {
     }
 
     if (event.data.type === "KAUFBOT_READY") {
-  agentReady = true;
+      agentReady = true;
 
-  const frame = document.getElementById("kaufbot-agent-frame");
-  frame?.classList.add("ready");
+      const frame = document.getElementById("kaufbot-agent-frame");
+      frame?.classList.add("ready");
 
-  if (
-    wrap.classList.contains("visible") &&
-    !hasPlayedGreeting &&
-    frame &&
-    frame.contentWindow
-  ) {
-    hasPlayedGreeting = true;
-    frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
-  }
+      if (
+        wrap.classList.contains("visible") &&
+        !hasPlayedGreeting &&
+        frame &&
+        frame.contentWindow
+      ) {
+        hasPlayedGreeting = true;
+        frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
+      }
 
-  return;
-}
+      return;
+    }
 
     if (event.data.type === "KAUFBOT_SUGGEST_LINK") {
       showSuggestedLink(event.data);
