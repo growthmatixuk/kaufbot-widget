@@ -327,29 +327,34 @@
   // Keep preloading for faster first open
   mountAgent();
 
-  function openKaufbot() {
-    if (destroyTimer) {
-      clearTimeout(destroyTimer);
-      destroyTimer = null;
-    }
-
-    if (!mounted) {
-      mountAgent();
-    }
-
-    startBtn.textContent = "Start talking";
-    hideSuggestedLink();
-
-    wrap.classList.add("visible");
-    launcher.classList.add("hidden");
-
-    const frame = document.getElementById("kaufbot-agent-frame");
-    if (agentReady) {
-      frame?.classList.add("ready");
-    } else {
-      frame?.classList.remove("ready");
-    }
+function openKaufbot() {
+  if (destroyTimer) {
+    clearTimeout(destroyTimer);
+    destroyTimer = null;
   }
+
+  if (!mounted) {
+    mountAgent();
+  }
+
+  startBtn.textContent = micLive ? "Mute mic" : "Start talking";
+  hideSuggestedLink();
+
+  const frame = document.getElementById("kaufbot-agent-frame");
+  if (frame && frame.contentWindow) {
+    frame.contentWindow.postMessage({ type: "KAUFBOT_PANEL_OPENED" }, "*");
+    frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
+  }
+
+  wrap.classList.add("visible");
+  launcher.classList.add("hidden");
+
+  if (agentReady) {
+    frame?.classList.add("ready");
+  } else {
+    frame?.classList.remove("ready");
+  }
+}
 
   function closeKaufbot() {
     wrap.classList.remove("visible");
