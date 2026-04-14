@@ -155,26 +155,30 @@
   let hasAutoAppeared = false;
   let micLive = false;
 
+  function buildPageContext() {
+    return {
+      url: window.location.href,
+      path: window.location.pathname,
+      title: document.title,
+      h1: document.querySelector("h1")?.innerText || ""
+    };
+  }
+
   function mountAgent() {
     if (mounted) return;
 
+    const pageContext = buildPageContext();
+
     const iframe = document.createElement("iframe");
     iframe.id = "kaufbot-agent-frame";
-   const pageContext = {
-  url: window.location.href,
-  path: window.location.pathname,
-  title: document.title,
-  h1: document.querySelector("h1")?.innerText || "",
-};
-
-iframe.src =
-  "https://growthmatixuk-kaufbot-widget.vercel.app/agent/?" +
-  new URLSearchParams({
-    context: JSON.stringify(pageContext),
-  });
+    iframe.src =
+      "https://growthmatixuk-kaufbot-widget.vercel.app/agent/?" +
+      new URLSearchParams({
+        context: JSON.stringify(pageContext)
+      }).toString();
     iframe.allow = "camera; microphone; autoplay; fullscreen; display-capture";
-    shell.appendChild(iframe);
 
+    shell.appendChild(iframe);
     mounted = true;
   }
 
