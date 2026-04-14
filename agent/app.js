@@ -499,6 +499,13 @@
       return;
     }
 
+    if (!requestIntent) {
+  window.parent.postMessage({
+    type: "KAUFBOT_CLEAR_LINK"
+  }, "*");
+  return;
+}
+
     window.parent.postMessage({
       type: "KAUFBOT_CLEAR_LINK"
     }, "*");
