@@ -261,12 +261,12 @@
         }
       });
 
-   call.on("app-message", (event) => {
+  call.on("app-message", (event) => {
   try {
     const payload = event?.data || event;
     if (!payload) return;
 
-    // Debug forwarder - keep this if you still want to inspect messages
+    // Debug (keep this)
     if (window.parent !== window) {
       window.parent.postMessage({
         type: "KAUFBOT_DEBUG_APP_MESSAGE",
@@ -274,12 +274,15 @@
       }, "*");
     }
 
-    // Only react to utterance events
+    // Only listen for utterances
     if (payload.event_type !== "conversation.utterance") return;
 
-    // IMPORTANT:
-    // Only react to what the USER said, not what the replica said
-    if (payload.role !== "user") return;
+    // ✅ NEW: Detect USER speech properly
+    const isUser =
+      payload?.properties?.speaker === "user" ||
+      payload?.speaker === "user";
+
+    if (!isUser) return;
 
     const text = (
       payload?.properties?.speech ||
@@ -291,7 +294,9 @@
 
     if (!text) return;
 
-    // Only show CTA when user is clearly asking to see / browse / find something
+    console.log("USER SAID:", text);
+
+    // Intent detection (same as before)
     const requestIntent =
       text.includes("show me") ||
       text.includes("take me to") ||
@@ -311,14 +316,9 @@
       return;
     }
 
-    // Headshots
-    if (
-      text.includes("headshot") ||
-      text.includes("headshots") ||
-      text.includes("corporate portrait") ||
-      text.includes("professional portrait") ||
-      text.includes("linkedin")
-    ) {
+    // CATEGORY MATCHES
+
+    if (text.includes("headshot")) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
         slug: "headshot"
@@ -326,15 +326,7 @@
       return;
     }
 
-    // Newborn / kids / seniors
-    if (
-      text.includes("newborn") ||
-      text.includes("baby") ||
-      text.includes("babies") ||
-      text.includes("kids") ||
-      text.includes("children") ||
-      text.includes("seniors")
-    ) {
+    if (text.includes("newborn") || text.includes("baby")) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
         slug: "newborn-kids-and-seniors"
@@ -342,13 +334,7 @@
       return;
     }
 
-    // Fine art / textures
-    if (
-      text.includes("fine art") ||
-      text.includes("texture") ||
-      text.includes("textured") ||
-      text.includes("masters")
-    ) {
+    if (text.includes("fine art") || text.includes("texture")) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
         slug: "masters-textures-and-fine-art"
@@ -356,12 +342,7 @@
       return;
     }
 
-    // Exterior
-    if (
-      text.includes("exterior") ||
-      text.includes("outdoor") ||
-      text.includes("outside")
-    ) {
+    if (text.includes("exterior") || text.includes("outdoor")) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
         slug: "exterior"
@@ -369,11 +350,7 @@
       return;
     }
 
-    // Floors
-    if (
-      text.includes("floor") ||
-      text.includes("floors")
-    ) {
+    if (text.includes("floor")) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
         slug: "floors"
@@ -381,13 +358,7 @@
       return;
     }
 
-    // Solid / seamless
-    if (
-      text.includes("solid") ||
-      text.includes("seamless") ||
-      text.includes("plain backdrop") ||
-      text.includes("plain background")
-    ) {
+    if (text.includes("solid") || text.includes("seamless")) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
         slug: "solid-seamless"
@@ -395,12 +366,7 @@
       return;
     }
 
-    // Interior
-    if (
-      text.includes("interior") ||
-      text.includes("indoors") ||
-      text.includes("room")
-    ) {
+    if (text.includes("interior") || text.includes("room")) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
         slug: "interior"
@@ -408,11 +374,7 @@
       return;
     }
 
-    // Signature collections
-    if (
-      text.includes("signature") ||
-      text.includes("signature collection")
-    ) {
+    if (text.includes("signature")) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
         slug: "signature-collections"
@@ -420,15 +382,7 @@
       return;
     }
 
-    // Holidays
-    if (
-      text.includes("holiday") ||
-      text.includes("christmas") ||
-      text.includes("seasonal") ||
-      text.includes("halloween") ||
-      text.includes("easter") ||
-      text.includes("valentine")
-    ) {
+    if (text.includes("holiday") || text.includes("christmas")) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
         slug: "holidays"
@@ -436,13 +390,7 @@
       return;
     }
 
-    // Floral
-    if (
-      text.includes("floral") ||
-      text.includes("flower") ||
-      text.includes("flowers") ||
-      text.includes("botanical")
-    ) {
+    if (text.includes("floral") || text.includes("flower")) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
         slug: "floral"
@@ -450,7 +398,6 @@
       return;
     }
 
-    // Clicki
     if (text.includes("clicki")) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
@@ -459,12 +406,7 @@
       return;
     }
 
-    // Magna Fix
-    if (
-      text.includes("magna fix") ||
-      text.includes("magna-fix") ||
-      text.includes("magnetic")
-    ) {
+    if (text.includes("magna")) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
         slug: "magna-fix"
@@ -472,13 +414,7 @@
       return;
     }
 
-    // Clearance
-    if (
-      text.includes("clearance") ||
-      text.includes("sale") ||
-      text.includes("discount") ||
-      text.includes("reduced")
-    ) {
+    if (text.includes("clearance") || text.includes("sale")) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
         slug: "clearance"
@@ -486,12 +422,7 @@
       return;
     }
 
-    // Roller systems
-    if (
-      text.includes("roller system") ||
-      text.includes("roller systems") ||
-      text.includes("backdrop roller")
-    ) {
+    if (text.includes("roller")) {
       window.parent.postMessage({
         type: "KAUFBOT_SUGGEST_LINK",
         slug: "roller-systems"
@@ -499,16 +430,10 @@
       return;
     }
 
-    if (!requestIntent) {
-  window.parent.postMessage({
-    type: "KAUFBOT_CLEAR_LINK"
-  }, "*");
-  return;
-}
-
     window.parent.postMessage({
       type: "KAUFBOT_CLEAR_LINK"
     }, "*");
+
   } catch (e) {
     console.warn("CTA detection error", e);
   }
