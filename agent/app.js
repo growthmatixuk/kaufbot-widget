@@ -34,7 +34,7 @@
   let conversationActivated = false;
 
   const WELCOME_TEXT =
-    "Hi, welcome to Click Backdrops. I’m KaufBot. Tell me what you’re looking for and I’ll help you find the right backdrop. If your browser asks for microphone access, allow it so I can hear you properly.";
+    "Hi, I’m KaufBot. Welcome to Click Backdrops. Click 'Start talking' and let’s chat.";
 
   function markReady() {
   if (kaufbotReady) return;
