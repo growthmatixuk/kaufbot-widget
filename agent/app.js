@@ -34,32 +34,31 @@
   let conversationActivated = false;
 
   const WELCOME_TEXT =
-    "Hi, I’m KaufBot. Welcome to Click Backdrops. Click 'Start talking' and I’ll help you find the perfect backdrop."
+    "Hi, I’m KaufBot! Welcome to Click Backdrops… Click 'Start talking' and let’s chat.";
 
   function markReady() {
-  if (kaufbotReady) return;
+    if (kaufbotReady) return;
 
-  kaufbotReady = true;
+    kaufbotReady = true;
 
-  if (canvas) {
-    canvas.style.opacity = "1";
+    if (canvas) {
+      canvas.style.opacity = "1";
+    }
+
+    const logo = document.getElementById("kaufbot-logo");
+    if (logo) {
+      logo.style.opacity = "1";
+    }
+
+    if (loading) {
+      loading.remove();
+    }
+
+    if (!sentReadyMessage && window.parent !== window) {
+      sentReadyMessage = true;
+      window.parent.postMessage({ type: "KAUFBOT_READY" }, "*");
+    }
   }
-
-  // ✅ ADD THIS
-  const logo = document.getElementById("kaufbot-logo");
-  if (logo) {
-    logo.style.opacity = "1";
-  }
-
-  if (loading) {
-    loading.remove();
-  }
-
-  if (!sentReadyMessage && window.parent !== window) {
-    sentReadyMessage = true;
-    window.parent.postMessage({ type: "KAUFBOT_READY" }, "*");
-  }
-}
 
   function resetReadyState() {
     kaufbotReady = false;
@@ -192,6 +191,10 @@
       hiddenAudio.srcObject = new MediaStream([remoteAudioTrack]);
       hiddenAudio.play().catch(console.warn);
     }
+
+    if (hiddenAudio) {
+      hiddenAudio.muted = true;
+    }
   }
 
   async function initKaufBot() {
@@ -224,7 +227,8 @@
       hiddenAudio.id = "agent-audio-hidden";
       hiddenAudio.autoplay = true;
       hiddenAudio.playsInline = true;
-      hiddenAudio.muted = false;
+      hiddenAudio.muted = true;
+      hiddenAudio.volume = 1;
 
       canvas = document.createElement("canvas");
       canvas.id = "agent-canvas";
@@ -261,270 +265,252 @@
         }
       });
 
-call.on("app-message", (event) => {
-  try {
-    const payload = event?.data || event;
-    if (!payload) return;
+      call.on("app-message", (event) => {
+        try {
+          const payload = event?.data || event;
+          if (!payload) return;
 
-    // keep debug forwarding
-    if (window.parent !== window) {
-      window.parent.postMessage({
-        type: "KAUFBOT_DEBUG_APP_MESSAGE",
-        payload
-      }, "*");
-    }
+          if (window.parent !== window) {
+            window.parent.postMessage({
+              type: "KAUFBOT_DEBUG_APP_MESSAGE",
+              payload
+            }, "*");
+          }
 
-    // Tavus is sending streaming utterance events
-    if (!String(payload.event_type || "").startsWith("conversation.utterance")) {
-      return;
-    }
+          if (!String(payload.event_type || "").startsWith("conversation.utterance")) {
+            return;
+          }
 
-    // IMPORTANT: Tavus uses properties.role
-    const isUser =
-      payload?.properties?.role === "user" ||
-      payload?.role === "user";
+          const isUser =
+            payload?.properties?.role === "user" ||
+            payload?.role === "user";
 
-    if (!isUser) return;
+          if (!isUser) return;
 
-    const text = (
-      payload?.properties?.speech ||
-      payload?.properties?.text ||
-      payload?.speech ||
-      payload?.text ||
-      ""
-    ).toLowerCase().trim();
+          const text = (
+            payload?.properties?.speech ||
+            payload?.properties?.text ||
+            payload?.speech ||
+            payload?.text ||
+            ""
+          ).toLowerCase().trim();
 
-    if (!text) return;
+          if (!text) return;
 
-    console.log("USER SAID:", text);
+          console.log("USER SAID:", text);
 
-    // Broader browse / show intent
-    const requestIntent =
-      text.includes("show me") ||
-      text.includes("take me to") ||
-      text.includes("take a look") ||
-      text.includes("look at") ||
-      text.includes("looking for") ||
-      text.includes("looking") ||
-      text.includes("do you have") ||
-      text.includes("can i see") ||
-      text.includes("can you show me") ||
-      text.includes("where are") ||
-      text.includes("i need") ||
-      text.includes("i want") ||
-      text.includes("browse") ||
-      text.includes("range") ||
-      text.includes("collection") ||
-      text.includes("collections") ||
-      text.includes("options") ||
-      text.includes("see");
+          const requestIntent =
+            text.includes("show me") ||
+            text.includes("take me to") ||
+            text.includes("take a look") ||
+            text.includes("look at") ||
+            text.includes("looking for") ||
+            text.includes("looking") ||
+            text.includes("do you have") ||
+            text.includes("can i see") ||
+            text.includes("can you show me") ||
+            text.includes("where are") ||
+            text.includes("i need") ||
+            text.includes("i want") ||
+            text.includes("browse") ||
+            text.includes("range") ||
+            text.includes("collection") ||
+            text.includes("collections") ||
+            text.includes("options") ||
+            text.includes("see");
 
-    if (!requestIntent) {
-      window.parent.postMessage({
-        type: "KAUFBOT_CLEAR_LINK"
-      }, "*");
-      return;
-    }
+          if (!requestIntent) {
+            window.parent.postMessage({
+              type: "KAUFBOT_CLEAR_LINK"
+            }, "*");
+            return;
+          }
 
-    // Headshots
-    if (
-      text.includes("headshot") ||
-      text.includes("headshots") ||
-      text.includes("corporate portrait") ||
-      text.includes("professional portrait") ||
-      text.includes("linkedin")
-    ) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "headshot"
-      }, "*");
-      return;
-    }
+          if (
+            text.includes("headshot") ||
+            text.includes("headshots") ||
+            text.includes("corporate portrait") ||
+            text.includes("professional portrait") ||
+            text.includes("linkedin")
+          ) {
+            window.parent.postMessage({
+              type: "KAUFBOT_SUGGEST_LINK",
+              slug: "headshot"
+            }, "*");
+            return;
+          }
 
-    // Newborn / kids / seniors
-    if (
-      text.includes("newborn") ||
-      text.includes("baby") ||
-      text.includes("babies") ||
-      text.includes("kids") ||
-      text.includes("children") ||
-      text.includes("child") ||
-      text.includes("seniors")
-    ) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "newborn-kids-and-seniors"
-      }, "*");
-      return;
-    }
+          if (
+            text.includes("newborn") ||
+            text.includes("baby") ||
+            text.includes("babies") ||
+            text.includes("kids") ||
+            text.includes("children") ||
+            text.includes("child") ||
+            text.includes("seniors")
+          ) {
+            window.parent.postMessage({
+              type: "KAUFBOT_SUGGEST_LINK",
+              slug: "newborn-kids-and-seniors"
+            }, "*");
+            return;
+          }
 
-    // Fine art / textures
-    if (
-      text.includes("fine art") ||
-      text.includes("texture") ||
-      text.includes("textures") ||
-      text.includes("textured") ||
-      text.includes("masters")
-    ) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "masters-textures-and-fine-art"
-      }, "*");
-      return;
-    }
+          if (
+            text.includes("fine art") ||
+            text.includes("texture") ||
+            text.includes("textures") ||
+            text.includes("textured") ||
+            text.includes("masters")
+          ) {
+            window.parent.postMessage({
+              type: "KAUFBOT_SUGGEST_LINK",
+              slug: "masters-textures-and-fine-art"
+            }, "*");
+            return;
+          }
 
-    // Exterior
-    if (
-      text.includes("exterior") ||
-      text.includes("outdoor") ||
-      text.includes("outside")
-    ) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "exterior"
-      }, "*");
-      return;
-    }
+          if (
+            text.includes("exterior") ||
+            text.includes("outdoor") ||
+            text.includes("outside")
+          ) {
+            window.parent.postMessage({
+              type: "KAUFBOT_SUGGEST_LINK",
+              slug: "exterior"
+            }, "*");
+            return;
+          }
 
-    // Floors
-    if (
-      text.includes("floor") ||
-      text.includes("floors")
-    ) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "floors"
-      }, "*");
-      return;
-    }
+          if (
+            text.includes("floor") ||
+            text.includes("floors")
+          ) {
+            window.parent.postMessage({
+              type: "KAUFBOT_SUGGEST_LINK",
+              slug: "floors"
+            }, "*");
+            return;
+          }
 
-    // Solid / seamless
-    if (
-      text.includes("solid") ||
-      text.includes("seamless") ||
-      text.includes("plain backdrop") ||
-      text.includes("plain background")
-    ) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "solid-seamless"
-      }, "*");
-      return;
-    }
+          if (
+            text.includes("solid") ||
+            text.includes("seamless") ||
+            text.includes("plain backdrop") ||
+            text.includes("plain background")
+          ) {
+            window.parent.postMessage({
+              type: "KAUFBOT_SUGGEST_LINK",
+              slug: "solid-seamless"
+            }, "*");
+            return;
+          }
 
-    // Interior
-    if (
-      text.includes("interior") ||
-      text.includes("indoors") ||
-      text.includes("room")
-    ) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "interior"
-      }, "*");
-      return;
-    }
+          if (
+            text.includes("interior") ||
+            text.includes("indoors") ||
+            text.includes("room")
+          ) {
+            window.parent.postMessage({
+              type: "KAUFBOT_SUGGEST_LINK",
+              slug: "interior"
+            }, "*");
+            return;
+          }
 
-    // Signature collections
-    if (
-      text.includes("signature") ||
-      text.includes("signature collection")
-    ) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "signature-collections"
-      }, "*");
-      return;
-    }
+          if (
+            text.includes("signature") ||
+            text.includes("signature collection")
+          ) {
+            window.parent.postMessage({
+              type: "KAUFBOT_SUGGEST_LINK",
+              slug: "signature-collections"
+            }, "*");
+            return;
+          }
 
-    // Holidays
-    if (
-      text.includes("holiday") ||
-      text.includes("christmas") ||
-      text.includes("seasonal") ||
-      text.includes("halloween") ||
-      text.includes("easter") ||
-      text.includes("valentine")
-    ) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "holidays"
-      }, "*");
-      return;
-    }
+          if (
+            text.includes("holiday") ||
+            text.includes("christmas") ||
+            text.includes("seasonal") ||
+            text.includes("halloween") ||
+            text.includes("easter") ||
+            text.includes("valentine")
+          ) {
+            window.parent.postMessage({
+              type: "KAUFBOT_SUGGEST_LINK",
+              slug: "holidays"
+            }, "*");
+            return;
+          }
 
-    // Floral
-    if (
-      text.includes("floral") ||
-      text.includes("flower") ||
-      text.includes("flowers") ||
-      text.includes("botanical")
-    ) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "floral"
-      }, "*");
-      return;
-    }
+          if (
+            text.includes("floral") ||
+            text.includes("flower") ||
+            text.includes("flowers") ||
+            text.includes("botanical")
+          ) {
+            window.parent.postMessage({
+              type: "KAUFBOT_SUGGEST_LINK",
+              slug: "floral"
+            }, "*");
+            return;
+          }
 
-    // Clicki
-    if (text.includes("clicki")) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "clicki"
-      }, "*");
-      return;
-    }
+          if (text.includes("clicki")) {
+            window.parent.postMessage({
+              type: "KAUFBOT_SUGGEST_LINK",
+              slug: "clicki"
+            }, "*");
+            return;
+          }
 
-    // Magna Fix
-    if (
-      text.includes("magna fix") ||
-      text.includes("magna-fix") ||
-      text.includes("magnetic")
-    ) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "magna-fix"
-      }, "*");
-      return;
-    }
+          if (
+            text.includes("magna fix") ||
+            text.includes("magna-fix") ||
+            text.includes("magnetic")
+          ) {
+            window.parent.postMessage({
+              type: "KAUFBOT_SUGGEST_LINK",
+              slug: "magna-fix"
+            }, "*");
+            return;
+          }
 
-    // Clearance
-    if (
-      text.includes("clearance") ||
-      text.includes("sale") ||
-      text.includes("discount") ||
-      text.includes("reduced")
-    ) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "clearance"
-      }, "*");
-      return;
-    }
+          if (
+            text.includes("clearance") ||
+            text.includes("sale") ||
+            text.includes("discount") ||
+            text.includes("reduced")
+          ) {
+            window.parent.postMessage({
+              type: "KAUFBOT_SUGGEST_LINK",
+              slug: "clearance"
+            }, "*");
+            return;
+          }
 
-    // Roller systems
-    if (
-      text.includes("roller system") ||
-      text.includes("roller systems") ||
-      text.includes("backdrop roller") ||
-      text.includes("roller")
-    ) {
-      window.parent.postMessage({
-        type: "KAUFBOT_SUGGEST_LINK",
-        slug: "roller-systems"
-      }, "*");
-      return;
-    }
+          if (
+            text.includes("roller system") ||
+            text.includes("roller systems") ||
+            text.includes("backdrop roller") ||
+            text.includes("roller")
+          ) {
+            window.parent.postMessage({
+              type: "KAUFBOT_SUGGEST_LINK",
+              slug: "roller-systems"
+            }, "*");
+            return;
+          }
 
-    window.parent.postMessage({
-      type: "KAUFBOT_CLEAR_LINK"
-    }, "*");
-  } catch (e) {
-    console.warn("CTA detection error", e);
-  }
-});
-      
+          window.parent.postMessage({
+            type: "KAUFBOT_CLEAR_LINK"
+          }, "*");
+        } catch (e) {
+          console.warn("CTA detection error", e);
+        }
+      });
+
       call.on("left-meeting", () => {
         joined = false;
         resetReadyState();
@@ -603,66 +589,61 @@ call.on("app-message", (event) => {
   await initKaufBot();
   await joinKaufBot();
 
- window.addEventListener("message", async (event) => {
-  if (!event.data) return;
+  window.addEventListener("message", async (event) => {
+    if (!event.data) return;
 
-  if (event.data.type === "KAUFBOT_PLAY_GREETING" && call && joined) {
-    // make sure KaufBot can be heard, but keep user mic off
-    if (hiddenAudio) {
-      hiddenAudio.muted = false;
-      hiddenAudio.volume = 1;
-      hiddenAudio.play().catch(() => {});
-    }
+    if (event.data.type === "KAUFBOT_PLAY_GREETING" && call && joined) {
+      if (hiddenAudio) {
+        hiddenAudio.muted = false;
+        hiddenAudio.volume = 1;
+        hiddenAudio.play().catch(() => {});
+      }
 
-    micMuted = true;
-    await call.setLocalAudio(false);
-    await sendWelcomeMessage();
-    return;
-  }
-
-  if (event.data.type === "KAUFBOT_START_TALKING" && call && joined) {
-    conversationActivated = true;
-    micMuted = false;
-
-    if (hiddenAudio) {
-      hiddenAudio.muted = false;
-      hiddenAudio.volume = 1;
-      hiddenAudio.play().catch(() => {});
-    }
-
-    await call.setLocalAudio(true);
-    return;
-  }
-
-  if (event.data.type === "KAUFBOT_TOGGLE_MIC" && call && joined) {
-    micMuted = !!event.data.muted;
-    await call.setLocalAudio(!micMuted);
-    return;
-  }
-
-  if (event.data.type === "KAUFBOT_PANEL_CLOSED") {
-    if (hiddenAudio) {
-      hiddenAudio.muted = true;
-    }
-
-    micMuted = true;
-    if (call && joined) {
+      micMuted = true;
       await call.setLocalAudio(false);
+      await sendWelcomeMessage();
+      return;
     }
-    return;
-  }
 
-  if (event.data.type === "KAUFBOT_PANEL_OPENED") {
-    if (hiddenAudio) {
-      hiddenAudio.muted = false;
-      hiddenAudio.volume = 1;
-      hiddenAudio.play().catch(() => {});
+    if (event.data.type === "KAUFBOT_START_TALKING" && call && joined) {
+      conversationActivated = true;
+      micMuted = false;
+
+      if (hiddenAudio) {
+        hiddenAudio.muted = false;
+        hiddenAudio.volume = 1;
+        hiddenAudio.play().catch(() => {});
+      }
+
+      await call.setLocalAudio(true);
+      return;
     }
-    return;
-  }
 
-  if (event.data.type === "KAUFBOT_CLOSE_SELF") {
-    await leaveKaufBot();
-  }
-});
+    if (event.data.type === "KAUFBOT_TOGGLE_MIC" && call && joined) {
+      micMuted = !!event.data.muted;
+      await call.setLocalAudio(!micMuted);
+      return;
+    }
+
+    if (event.data.type === "KAUFBOT_PANEL_CLOSED") {
+      if (hiddenAudio) {
+        hiddenAudio.muted = true;
+      }
+
+      micMuted = true;
+      if (call && joined) {
+        await call.setLocalAudio(false);
+      }
+      return;
+    }
+
+    if (event.data.type === "KAUFBOT_PANEL_OPENED") {
+      // intentionally do nothing here
+      return;
+    }
+
+    if (event.data.type === "KAUFBOT_CLOSE_SELF") {
+      await leaveKaufBot();
+    }
+  });
 })();
