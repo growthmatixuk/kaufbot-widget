@@ -264,13 +264,252 @@
 call.on("app-message", (event) => {
   try {
     const payload = event?.data || event;
+    if (!payload) return;
 
+    // keep debug forwarding
     if (window.parent !== window) {
       window.parent.postMessage({
         type: "KAUFBOT_DEBUG_APP_MESSAGE",
         payload
       }, "*");
     }
+
+    // Tavus is sending streaming utterance events
+    if (!String(payload.event_type || "").startsWith("conversation.utterance")) {
+      return;
+    }
+
+    // Only react to USER speech, not KaufBot speech
+    const isUser =
+      payload?.properties?.speaker === "user" ||
+      payload?.speaker === "user";
+
+    if (!isUser) return;
+
+    const text = (
+      payload?.properties?.speech ||
+      payload?.properties?.text ||
+      payload?.speech ||
+      payload?.text ||
+      ""
+    ).toLowerCase().trim();
+
+    if (!text) return;
+
+    console.log("USER SAID:", text);
+
+    // Only show CTA when user is clearly asking to see / browse / find something
+    const requestIntent =
+      text.includes("show me") ||
+      text.includes("take me to") ||
+      text.includes("looking for") ||
+      text.includes("do you have") ||
+      text.includes("can i see") ||
+      text.includes("can you show me") ||
+      text.includes("where are") ||
+      text.includes("i need") ||
+      text.includes("i want") ||
+      text.includes("browse");
+
+    if (!requestIntent) {
+      window.parent.postMessage({
+        type: "KAUFBOT_CLEAR_LINK"
+      }, "*");
+      return;
+    }
+
+    // Headshots
+    if (
+      text.includes("headshot") ||
+      text.includes("headshots") ||
+      text.includes("corporate portrait") ||
+      text.includes("professional portrait") ||
+      text.includes("linkedin")
+    ) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "headshot"
+      }, "*");
+      return;
+    }
+
+    // Newborn / kids / seniors
+    if (
+      text.includes("newborn") ||
+      text.includes("baby") ||
+      text.includes("babies") ||
+      text.includes("kids") ||
+      text.includes("children") ||
+      text.includes("seniors")
+    ) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "newborn-kids-and-seniors"
+      }, "*");
+      return;
+    }
+
+    // Fine art / textures
+    if (
+      text.includes("fine art") ||
+      text.includes("texture") ||
+      text.includes("textured") ||
+      text.includes("masters")
+    ) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "masters-textures-and-fine-art"
+      }, "*");
+      return;
+    }
+
+    // Exterior
+    if (
+      text.includes("exterior") ||
+      text.includes("outdoor") ||
+      text.includes("outside")
+    ) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "exterior"
+      }, "*");
+      return;
+    }
+
+    // Floors
+    if (
+      text.includes("floor") ||
+      text.includes("floors")
+    ) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "floors"
+      }, "*");
+      return;
+    }
+
+    // Solid / seamless
+    if (
+      text.includes("solid") ||
+      text.includes("seamless") ||
+      text.includes("plain backdrop") ||
+      text.includes("plain background")
+    ) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "solid-seamless"
+      }, "*");
+      return;
+    }
+
+    // Interior
+    if (
+      text.includes("interior") ||
+      text.includes("indoors") ||
+      text.includes("room")
+    ) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "interior"
+      }, "*");
+      return;
+    }
+
+    // Signature collections
+    if (
+      text.includes("signature") ||
+      text.includes("signature collection")
+    ) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "signature-collections"
+      }, "*");
+      return;
+    }
+
+    // Holidays
+    if (
+      text.includes("holiday") ||
+      text.includes("christmas") ||
+      text.includes("seasonal") ||
+      text.includes("halloween") ||
+      text.includes("easter") ||
+      text.includes("valentine")
+    ) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "holidays"
+      }, "*");
+      return;
+    }
+
+    // Floral
+    if (
+      text.includes("floral") ||
+      text.includes("flower") ||
+      text.includes("flowers") ||
+      text.includes("botanical")
+    ) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "floral"
+      }, "*");
+      return;
+    }
+
+    // Clicki
+    if (text.includes("clicki")) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "clicki"
+      }, "*");
+      return;
+    }
+
+    // Magna Fix
+    if (
+      text.includes("magna fix") ||
+      text.includes("magna-fix") ||
+      text.includes("magnetic")
+    ) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "magna-fix"
+      }, "*");
+      return;
+    }
+
+    // Clearance
+    if (
+      text.includes("clearance") ||
+      text.includes("sale") ||
+      text.includes("discount") ||
+      text.includes("reduced")
+    ) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "clearance"
+      }, "*");
+      return;
+    }
+
+    // Roller systems
+    if (
+      text.includes("roller system") ||
+      text.includes("roller systems") ||
+      text.includes("backdrop roller") ||
+      text.includes("roller")
+    ) {
+      window.parent.postMessage({
+        type: "KAUFBOT_SUGGEST_LINK",
+        slug: "roller-systems"
+      }, "*");
+      return;
+    }
+
+    window.parent.postMessage({
+      type: "KAUFBOT_CLEAR_LINK"
+    }, "*");
   } catch (e) {
     console.warn("CTA detection error", e);
   }
