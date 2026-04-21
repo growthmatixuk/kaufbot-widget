@@ -75,6 +75,127 @@
 
   const style = document.createElement("style");
   style.innerHTML = `
+    #kaufbot-teaser {
+      position: fixed;
+      right: 42px;
+      bottom: 52px;
+      width: 112px;
+      height: 112px;
+      z-index: 999999;
+      opacity: 0;
+      transform: translateY(16px) scale(0.96);
+      pointer-events: none;
+      transition: opacity 0.45s ease, transform 0.45s ease;
+    }
+
+    #kaufbot-teaser.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    #kaufbot-teaser.hidden {
+      opacity: 0;
+      transform: translateY(10px) scale(0.94);
+      pointer-events: none;
+    }
+
+    #kaufbot-teaser-core {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.18), rgba(255,255,255,0.04) 45%, rgba(0,0,0,0.42) 100%);
+      backdrop-filter: blur(10px);
+      box-shadow:
+        0 18px 40px rgba(0,0,0,0.20),
+        inset 0 1px 1px rgba(255,255,255,0.20);
+      overflow: hidden;
+    }
+
+    #kaufbot-teaser-core::before {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+
+    #kaufbot-teaser-core::after {
+      content: "";
+      position: absolute;
+      inset: 22px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 35%, rgba(255,255,255,0.01) 70%, transparent 100%);
+      filter: blur(1px);
+    }
+
+    #kaufbot-teaser-ring {
+      position: absolute;
+      inset: 8px;
+      border-radius: 999px;
+      border: 2px solid transparent;
+      border-top-color: rgba(255,255,255,0.95);
+      border-right-color: rgba(255,255,255,0.30);
+      border-bottom-color: rgba(255,255,255,0.10);
+      border-left-color: rgba(255,255,255,0.55);
+      animation: kaufbotTeaserSpin 1.8s linear infinite;
+    }
+
+    #kaufbot-teaser-ring-2 {
+      position: absolute;
+      inset: 18px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      border-top-color: rgba(255,255,255,0.18);
+      border-right-color: rgba(255,255,255,0.75);
+      border-bottom-color: rgba(255,255,255,0.18);
+      border-left-color: rgba(255,255,255,0.08);
+      animation: kaufbotTeaserSpinReverse 2.6s linear infinite;
+    }
+
+    #kaufbot-teaser-dot {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.92);
+      box-shadow:
+        0 0 18px rgba(255,255,255,0.45),
+        0 0 36px rgba(255,255,255,0.16);
+      animation: kaufbotTeaserPulse 1.9s ease-in-out infinite;
+    }
+
+    #kaufbot-teaser-label {
+      position: absolute;
+      left: 50%;
+      bottom: -24px;
+      transform: translateX(-50%);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(17,17,17,0.72);
+      white-space: nowrap;
+    }
+
+    @keyframes kaufbotTeaserSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes kaufbotTeaserSpinReverse {
+      from { transform: rotate(360deg); }
+      to { transform: rotate(0deg); }
+    }
+
+    @keyframes kaufbotTeaserPulse {
+      0%   { transform: translate(-50%, -50%) scale(0.94); opacity: 0.86; }
+      50%  { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(0.94); opacity: 0.86; }
+    }
+
     #kaufbot-launcher {
       position: fixed;
       right: 28px;
@@ -82,19 +203,21 @@
       z-index: 999999;
       cursor: pointer;
       opacity: 0;
-      transform: translateY(20px);
-      transition: transform 0.4s ease, opacity 0.4s ease;
+      transform: translateY(22px) scale(0.97);
+      transition: transform 0.45s ease, opacity 0.45s ease;
+      pointer-events: none;
     }
 
     #kaufbot-launcher.visible {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
     }
 
     #kaufbot-launcher.hidden {
       opacity: 0;
       pointer-events: none;
-      transform: translateY(10px);
+      transform: translateY(10px) scale(0.97);
     }
 
     #kaufbot-launcher img {
@@ -155,7 +278,8 @@
       transition: opacity 0.15s ease;
     }
 
-    #kaufbot-agent-frame.ready {
+    #kaufbot-agent-frame.ready,
+    #kaufbot-agent-frame.visual-ready {
       opacity: 1;
     }
 
@@ -189,36 +313,36 @@
     }
 
     .kaufbot-mini-btn {
-  border: 0;
-  border-radius: 999px;
-  padding: 12px 18px;
-  background: rgba(255,255,255,0.92);
-  color: #111;
-  cursor: pointer;
-  font-weight: 700;
-  backdrop-filter: blur(10px);
-  box-shadow: 
-    0 8px 20px rgba(0,0,0,0.18),
-    0 2px 6px rgba(0,0,0,0.08);
-  transition: all 0.2s ease;
-}
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      background: rgba(255,255,255,0.92);
+      color: #111;
+      cursor: pointer;
+      font-weight: 700;
+      backdrop-filter: blur(10px);
+      box-shadow:
+        0 8px 20px rgba(0,0,0,0.18),
+        0 2px 6px rgba(0,0,0,0.08);
+      transition: all 0.2s ease;
+    }
 
-.kaufbot-mini-btn:hover {
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 
-    0 12px 26px rgba(0,0,0,0.22),
-    0 4px 10px rgba(0,0,0,0.12);
-}
+    .kaufbot-mini-btn:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow:
+        0 12px 26px rgba(0,0,0,0.22),
+        0 4px 10px rgba(0,0,0,0.12);
+    }
 
-@keyframes kaufbotPulse {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.04); }
-  100% { transform: scale(1); }
-}
+    @keyframes kaufbotPulse {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
 
-#kaufbot-start-btn {
-  animation: kaufbotPulse 2.5s ease-in-out infinite;
-}
+    #kaufbot-start-btn {
+      animation: kaufbotPulse 2.5s ease-in-out infinite;
+    }
 
     #kaufbot-link-btn {
       display: none;
@@ -236,6 +360,18 @@
     }
 
     @media (max-width: 768px) {
+      #kaufbot-teaser {
+        right: 18px;
+        bottom: 24px;
+        width: 84px;
+        height: 84px;
+      }
+
+      #kaufbot-teaser-label {
+        font-size: 10px;
+        bottom: -20px;
+      }
+
       #kaufbot-launcher {
         right: 12px;
         bottom: 12px;
@@ -259,6 +395,17 @@
   `;
   document.head.appendChild(style);
 
+  const teaser = document.createElement("div");
+  teaser.id = "kaufbot-teaser";
+  teaser.innerHTML = `
+    <div id="kaufbot-teaser-core">
+      <div id="kaufbot-teaser-ring"></div>
+      <div id="kaufbot-teaser-ring-2"></div>
+      <div id="kaufbot-teaser-dot"></div>
+    </div>
+    <div id="kaufbot-teaser-label">Loading KaufBot</div>
+  `;
+
   const launcher = document.createElement("div");
   launcher.id = "kaufbot-launcher";
   launcher.innerHTML = `
@@ -276,12 +423,15 @@
     </div>
   `;
 
+  document.body.appendChild(teaser);
   document.body.appendChild(launcher);
   document.body.appendChild(wrap);
 
-  setTimeout(() => {
-    launcher.classList.add("visible");
-  }, 800);
+  const teaserShownAt = Date.now();
+
+  requestAnimationFrame(() => {
+    teaser.classList.add("visible");
+  });
 
   const shell = wrap.querySelector("#kaufbot-stage-shell");
   const closeBtn = wrap.querySelector("#kaufbot-close");
@@ -289,11 +439,13 @@
   const linkBtn = wrap.querySelector("#kaufbot-link-btn");
 
   let mounted = false;
+  let visualReady = false;
   let agentReady = false;
   let micLive = false;
   let currentSuggestedUrl = "";
   let destroyTimer = null;
   let hasPlayedGreeting = false;
+  let launcherShown = false;
 
   function buildPageContext() {
     return {
@@ -302,6 +454,23 @@
       title: document.title,
       h1: document.querySelector("h1")?.innerText || ""
     };
+  }
+
+  function showLauncherWhenReady() {
+    if (launcherShown) return;
+    launcherShown = true;
+
+    const minTease = 1800;
+    const elapsed = Date.now() - teaserShownAt;
+    const wait = Math.max(0, minTease - elapsed);
+
+    setTimeout(() => {
+      teaser.classList.add("hidden");
+
+      setTimeout(() => {
+        launcher.classList.add("visible");
+      }, 180);
+    }, wait);
   }
 
   function showSuggestedLink(payload) {
@@ -346,7 +515,7 @@
     mounted = true;
   }
 
-  // Preload for faster first open
+  // preload in background
   mountAgent();
 
   function openKaufbot() {
@@ -363,12 +532,19 @@
     hideSuggestedLink();
 
     wrap.classList.add("visible");
+    teaser.classList.add("hidden");
     launcher.classList.add("hidden");
 
     const frame = document.getElementById("kaufbot-agent-frame");
 
     if (frame && frame.contentWindow) {
       frame.contentWindow.postMessage({ type: "KAUFBOT_PANEL_OPENED" }, "*");
+    }
+
+    if (visualReady) {
+      frame?.classList.add("visual-ready");
+    } else {
+      frame?.classList.remove("visual-ready");
     }
 
     if (agentReady) {
@@ -391,11 +567,13 @@
     }
 
     wrap.classList.remove("visible");
-    launcher.classList.remove("hidden");
     micLive = false;
 
     startBtn.textContent = "Start talking";
     hideSuggestedLink();
+
+    launcher.classList.remove("hidden");
+    launcher.classList.add("visible");
 
     if (destroyTimer) {
       clearTimeout(destroyTimer);
@@ -415,6 +593,7 @@
         }
 
         mounted = false;
+        visualReady = false;
         agentReady = false;
         destroyTimer = null;
         hasPlayedGreeting = false;
@@ -423,6 +602,7 @@
   }
 
   launcher.addEventListener("click", openKaufbot);
+  teaser.addEventListener("click", openKaufbot);
   closeBtn.addEventListener("click", closeKaufbot);
 
   startBtn.addEventListener("click", () => {
@@ -457,11 +637,23 @@
       return;
     }
 
+    if (event.data.type === "KAUFBOT_VISUAL_READY") {
+      visualReady = true;
+
+      const frame = document.getElementById("kaufbot-agent-frame");
+      frame?.classList.add("visual-ready");
+
+      showLauncherWhenReady();
+      return;
+    }
+
     if (event.data.type === "KAUFBOT_READY") {
       agentReady = true;
 
       const frame = document.getElementById("kaufbot-agent-frame");
       frame?.classList.add("ready");
+
+      showLauncherWhenReady();
 
       if (
         wrap.classList.contains("visible") &&
