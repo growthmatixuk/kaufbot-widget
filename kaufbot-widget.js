@@ -189,15 +189,19 @@
     }
 
     .kaufbot-mini-btn {
-      border: 0;
-      border-radius: 999px;
-      padding: 10px 16px;
-      background: rgba(0,0,0,.82);
-      color: #fff;
-      cursor: pointer;
-      font-weight: 600;
-      backdrop-filter: blur(6px);
-    }
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  background: rgba(255,255,255,0.92);
+  color: #111;
+  cursor: pointer;
+  font-weight: 700;
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 8px 20px rgba(0,0,0,0.18),
+    0 2px 6px rgba(0,0,0,0.08);
+  transition: all 0.2s ease;
+}
 
     #kaufbot-link-btn {
       display: none;
