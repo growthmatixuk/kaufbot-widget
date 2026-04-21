@@ -34,19 +34,25 @@
 
   let micMuted = true;
   let conversationActivated = false;
-  let hasPlayedStartTalkingIntro =
-  sessionStorage.getItem(SESSION_KEYS.startTalkingPlayed) === "1";
   let isProcessingProductReply = false;
+
+const SESSION_KEYS = {
+  startTalkingPlayed: "kaufbot_start_talking_played"
+  
+  let hasPlayedStartTalkingIntro = false;
+
+  try {
+  hasPlayedStartTalkingIntro =
+    sessionStorage.getItem(SESSION_KEYS.startTalkingPlayed) === "1";
+} catch (e) {
+  console.warn("Session storage unavailable", e);
+} 
 
   const WELCOME_TEXT =
     "Hi, I’m KoffBot! Welcome to Click Backdrops… Click 'Start talking' and let’s chat.";
 
   const START_TALKING_TEXT =
     "Great, I can hear you now… How can I help you today?";
-
-  const SESSION_KEYS = {
-  startTalkingPlayed: "kaufbot_start_talking_played"
-};
 
   function markReady() {
     if (kaufbotReady) return;
