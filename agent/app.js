@@ -36,17 +36,7 @@
   let conversationActivated = false;
   let isProcessingProductReply = false;
 
-  const SESSION_KEYS = {
-    startTalkingPlayed: "kaufbot_start_talking_played"
-  };
-
   let hasPlayedStartTalkingIntro = false;
-  try {
-    hasPlayedStartTalkingIntro =
-      sessionStorage.getItem(SESSION_KEYS.startTalkingPlayed) === "1";
-  } catch (e) {
-    console.warn("Session storage unavailable", e);
-  }
 
   const WELCOME_TEXT =
     "Hi, I’m KoffBot! Welcome to Click Backdrops… Click 'Start talking' and let’s chat.";
@@ -741,14 +731,10 @@
       await call.setLocalAudio(true);
 
       if (!hasPlayedStartTalkingIntro) {
-        hasPlayedStartTalkingIntro = true;
-        try {
-          sessionStorage.setItem(SESSION_KEYS.startTalkingPlayed, "1");
-        } catch (e) {
-          console.warn("Could not persist start-talking state", e);
-        }
-        await sendSpokenLine(START_TALKING_TEXT);
-      }
+  hasPlayedStartTalkingIntro = true;
+  console.log("Sending start talking intro");
+  await sendSpokenLine(START_TALKING_TEXT);
+}
 
       return;
     }
