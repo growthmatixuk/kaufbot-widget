@@ -34,9 +34,13 @@
 
   let micMuted = true;
   let conversationActivated = false;
+  let hasPlayedStartTalkingIntro = false;
 
   const WELCOME_TEXT =
     "Hi, I’m KoffBot! Welcome to Click Backdrops… Click 'Start talking' and let’s chat.";
+
+  const START_TALKING_TEXT =
+    "Great, I can hear you now… How can I help you today?";
 
   function markReady() {
     if (kaufbotReady) return;
@@ -537,6 +541,7 @@
     joined = false;
     micMuted = true;
     conversationActivated = false;
+    hasPlayedStartTalkingIntro = false;
   }
 
   async function sendWelcomeMessage() {
@@ -556,6 +561,26 @@
       call.sendAppMessage(interaction, "*");
     } catch (err) {
       console.warn("Failed to send welcome echo", err);
+    }
+  }
+
+  async function sendSpokenLine(text) {
+    if (!call || !sessionData?.conversation_id || !text) return;
+
+    const interaction = {
+      message_type: "conversation",
+      event_type: "conversation.echo",
+      conversation_id: sessionData.conversation_id,
+      properties: {
+        text
+      }
+    };
+
+    try {
+      console.log("Sending spoken line:", text);
+      call.sendAppMessage(interaction, "*");
+    } catch (err) {
+      console.warn("Failed to send spoken line", err);
     }
   }
 
@@ -591,6 +616,12 @@
       }
 
       await call.setLocalAudio(true);
+
+      if (!hasPlayedStartTalkingIntro) {
+        hasPlayedStartTalkingIntro = true;
+        await sendSpokenLine(START_TALKING_TEXT);
+      }
+
       return;
     }
 
