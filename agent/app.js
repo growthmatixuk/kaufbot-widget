@@ -300,9 +300,9 @@
 
           const isUser =
             payload?.properties?.role === "user" ||
-            payload?.role === "user";
+            payload?.role === "";
 
-          if (!isUser) return;
+          if (!is) return;
 
           const text = (
             payload?.properties?.speech ||
