@@ -34,7 +34,8 @@
 
   let micMuted = true;
   let conversationActivated = false;
-  let hasPlayedStartTalkingIntro = false;
+  let hasPlayedStartTalkingIntro =
+  sessionStorage.getItem(SESSION_KEYS.startTalkingPlayed) === "1";
   let isProcessingProductReply = false;
 
   const WELCOME_TEXT =
@@ -42,6 +43,10 @@
 
   const START_TALKING_TEXT =
     "Great, I can hear you now… How can I help you today?";
+
+  const SESSION_KEYS = {
+  startTalkingPlayed: "kaufbot_start_talking_played"
+};
 
   function markReady() {
     if (kaufbotReady) return;
@@ -730,9 +735,10 @@
       await call.setLocalAudio(true);
 
       if (!hasPlayedStartTalkingIntro) {
-        hasPlayedStartTalkingIntro = true;
-        await sendSpokenLine(START_TALKING_TEXT);
-      }
+  hasPlayedStartTalkingIntro = true;
+  sessionStorage.setItem(SESSION_KEYS.startTalkingPlayed, "1");
+  await sendSpokenLine(START_TALKING_TEXT);
+}
 
       return;
     }
