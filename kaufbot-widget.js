@@ -14,6 +14,17 @@
     return;
   }
 
+  const SESSION_KEYS = {
+    teaserSeen: "kaufbot_teaser_seen",
+    greetingPlayed: "kaufbot_greeting_played"
+  };
+
+  const hasSeenTeaserThisSession =
+    sessionStorage.getItem(SESSION_KEYS.teaserSeen) === "1";
+
+  const hasPlayedGreetingThisSession =
+    sessionStorage.getItem(SESSION_KEYS.greetingPlayed) === "1";
+
   const PAGE_MAP = {
     "newborn-kids-and-seniors": {
       label: "View Newborn, Kids & Seniors Backdrops",
@@ -429,9 +440,14 @@
 
   const teaserShownAt = Date.now();
 
-  requestAnimationFrame(() => {
-    teaser.classList.add("visible");
-  });
+  if (!hasSeenTeaserThisSession) {
+    requestAnimationFrame(() => {
+      teaser.classList.add("visible");
+    });
+  } else {
+    teaser.classList.add("hidden");
+    launcher.classList.add("visible");
+  }
 
   const shell = wrap.querySelector("#kaufbot-stage-shell");
   const closeBtn = wrap.querySelector("#kaufbot-close");
@@ -444,8 +460,8 @@
   let micLive = false;
   let currentSuggestedUrl = "";
   let destroyTimer = null;
-  let hasPlayedGreeting = false;
-  let launcherShown = false;
+  let hasPlayedGreeting = hasPlayedGreetingThisSession;
+  let launcherShown = hasSeenTeaserThisSession;
 
   function buildPageContext() {
     return {
@@ -460,12 +476,19 @@
     if (launcherShown) return;
     launcherShown = true;
 
+    if (hasSeenTeaserThisSession) {
+      teaser.classList.add("hidden");
+      launcher.classList.add("visible");
+      return;
+    }
+
     const minTease = 1800;
     const elapsed = Date.now() - teaserShownAt;
     const wait = Math.max(0, minTease - elapsed);
 
     setTimeout(() => {
       teaser.classList.add("hidden");
+      sessionStorage.setItem(SESSION_KEYS.teaserSeen, "1");
 
       setTimeout(() => {
         launcher.classList.add("visible");
@@ -515,7 +538,6 @@
     mounted = true;
   }
 
-  // preload in background
   mountAgent();
 
   function openKaufbot() {
@@ -552,6 +574,7 @@
 
       if (!hasPlayedGreeting && frame && frame.contentWindow) {
         hasPlayedGreeting = true;
+        sessionStorage.setItem(SESSION_KEYS.greetingPlayed, "1");
         frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
       }
     } else {
@@ -596,7 +619,6 @@
         visualReady = false;
         agentReady = false;
         destroyTimer = null;
-        hasPlayedGreeting = false;
       }, 200);
     }, 60000);
   }
@@ -662,6 +684,7 @@
         frame.contentWindow
       ) {
         hasPlayedGreeting = true;
+        sessionStorage.setItem(SESSION_KEYS.greetingPlayed, "1");
         frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
       }
 
