@@ -203,6 +203,23 @@
   transition: all 0.2s ease;
 }
 
+.kaufbot-mini-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 
+    0 12px 26px rgba(0,0,0,0.22),
+    0 4px 10px rgba(0,0,0,0.12);
+}
+
+@keyframes kaufbotPulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+#kaufbot-start-btn {
+  animation: kaufbotPulse 2.5s ease-in-out infinite;
+}
+
     #kaufbot-link-btn {
       display: none;
       max-width: 280px;
