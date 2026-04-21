@@ -102,77 +102,86 @@
   }
 
   function startChromaKey() {
-    if (!hiddenVideo || !canvas || !ctx) return;
+  if (!hiddenVideo || !canvas || !ctx) return;
 
-    ctx.imageSmoothingEnabled = true;
-    if ("imageSmoothingQuality" in ctx) {
-      ctx.imageSmoothingQuality = "high";
-    }
+  ctx.imageSmoothingEnabled = true;
+  if ("imageSmoothingQuality" in ctx) {
+    ctx.imageSmoothingQuality = "high";
+  }
 
-    const draw = () => {
-      if (hiddenVideo.readyState >= 2) {
-        const videoWidth = hiddenVideo.videoWidth;
-        const videoHeight = hiddenVideo.videoHeight;
+  const draw = () => {
+    if (hiddenVideo.readyState >= 2) {
+      const videoWidth = hiddenVideo.videoWidth;
+      const videoHeight = hiddenVideo.videoHeight;
 
-        if (videoWidth && videoHeight) {
-          if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
-            canvas.width = videoWidth;
-            canvas.height = videoHeight;
+      if (videoWidth && videoHeight) {
+        if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
+          canvas.width = videoWidth;
+          canvas.height = videoHeight;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(hiddenVideo, 0, 0, videoWidth, videoHeight);
+
+        const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = frame.data;
+
+        for (let i = 0; i < data.length; i += 4) {
+          let r = data[i];
+          let g = data[i + 1];
+          let b = data[i + 2];
+          let a = data[i + 3];
+
+          const greenDominance = g - Math.max(r, b);
+
+          if (g > 95 && greenDominance > 28) {
+            a = 0;
+          } else if (g > 70 && greenDominance > 12) {
+            const spill = Math.min(1, (greenDominance - 12) / 28);
+            g = g * (1 - spill * 0.7);
+            r = r + spill * 10;
+            b = b + spill * 10;
+            a = a * (1 - spill * 0.35);
           }
 
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(hiddenVideo, 0, 0, videoWidth, videoHeight);
+          data[i] = r;
+          data[i + 1] = g;
+          data[i + 2] = b;
+          data[i + 3] = a;
+        }
 
-          const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const data = frame.data;
+        ctx.putImageData(frame, 0, 0);
 
-          for (let i = 0; i < data.length; i += 4) {
-            let r = data[i];
-            let g = data[i + 1];
-            let b = data[i + 2];
-            let a = data[i + 3];
+        animateLogo();
 
-            const greenDominance = g - Math.max(r, b);
+        if (!kaufbotReady) {
+          const minWidth = 480;
+          const minHeight = 720;
 
-            if (g > 95 && greenDominance > 28) {
-              a = 0;
-            } else if (g > 70 && greenDominance > 12) {
-              const spill = Math.min(1, (greenDominance - 12) / 28);
-              g = g * (1 - spill * 0.7);
-              r = r + spill * 10;
-              b = b + spill * 10;
-              a = a * (1 - spill * 0.35);
-            }
-
-            data[i] = r;
-            data[i + 1] = g;
-            data[i + 2] = b;
-            data[i + 3] = a;
+          if (videoWidth >= minWidth && videoHeight >= minHeight) {
+            goodFrameCount++;
+          } else {
+            goodFrameCount = 0;
           }
 
-          ctx.putImageData(frame, 0, 0);
+          if (goodFrameCount >= 6) {
+            videoStreamReady = true;
+            markReady();
 
-          animateLogo();
-
-          if (!kaufbotReady) {
-            const minWidth = 480;
-            const minHeight = 720;
-
-            if (videoWidth >= minWidth && videoHeight >= minHeight) {
-              goodFrameCount++;
-            } else {
-              goodFrameCount = 0;
-            }
-
-            if (goodFrameCount >= 6) {
-  videoStreamReady = true;
-  markReady();
-
-  setTimeout(() => {
-    if (logoEl) {
-      logoEl.style.opacity = "0.95";
+            setTimeout(() => {
+              if (logoEl) {
+                logoEl.style.opacity = "0.95";
+              }
+            }, 180);
+          }
+        }
+      }
     }
-  }, 180);
+
+    animationId = requestAnimationFrame(draw);
+  };
+
+  draw();
 }
 
       animationId = requestAnimationFrame(draw);
