@@ -34,7 +34,7 @@
   let conversationActivated = false;
 
   const WELCOME_TEXT =
-    "Hi, I’m KaufBot! Welcome to Click Backdrops… Click 'Start talking' and let’s chat.";
+  "Hi, I’m KaufBot! Welcome to Click Backdrops… Click 'Start talking' and let’s chat.";
 
   function markReady() {
     if (kaufbotReady) return;
@@ -567,24 +567,25 @@
     conversationActivated = false;
   }
 
-  async function sendWelcomeMessage() {
-    if (!call || !sessionData?.conversation_id) return;
+ async function sendWelcomeMessage() {
+  if (!call || !sessionData?.conversation_id) return;
 
-    const interaction = {
-      message_type: "conversation",
-      event_type: "conversation.respond",
-      conversation_id: sessionData.conversation_id,
-      properties: {
-        text: WELCOME_TEXT
-      }
-    };
-
-    try {
-      call.sendAppMessage(interaction, "*");
-    } catch (err) {
-      console.warn("Failed to send welcome interaction", err);
+  const interaction = {
+    message_type: "conversation",
+    event_type: "conversation.echo",
+    conversation_id: sessionData.conversation_id,
+    properties: {
+      text: WELCOME_TEXT,
+      modality: "speech"
     }
+  };
+
+  try {
+    call.sendAppMessage(interaction, "*");
+  } catch (err) {
+    console.warn("Failed to send welcome echo", err);
   }
+}
 
   await initKaufBot();
   await joinKaufBot();
