@@ -36,59 +36,58 @@
   let conversationActivated = false;
 
   const WELCOME_TEXT =
-  "Hi, I’m KaufBot! Welcome to Click Backdrops… Click 'Start talking' and let’s chat.";
+    "Hi, I’m KaufBot! Welcome to Click Backdrops… Click 'Start talking' and let’s chat.";
 
   function markReady() {
-  if (kaufbotReady) return;
-  if (!videoStreamReady || !audioStreamReady) return;
+    if (kaufbotReady) return;
+    if (!videoStreamReady || !audioStreamReady) return;
 
-  kaufbotReady = true;
+    kaufbotReady = true;
 
-  if (canvas) {
-    canvas.style.opacity = "1";
+    if (canvas) {
+      canvas.style.opacity = "1";
+    }
+
+    const logo = document.getElementById("kaufbot-logo");
+    if (logo) {
+      logo.style.opacity = "1";
+    }
+
+    if (loading) {
+      loading.remove();
+    }
+
+    if (!sentReadyMessage && window.parent !== window) {
+      sentReadyMessage = true;
+      window.parent.postMessage({ type: "KAUFBOT_READY" }, "*");
+    }
   }
-
-  const logo = document.getElementById("kaufbot-logo");
-  if (logo) {
-    logo.style.opacity = "1";
-  }
-
-  if (loading) {
-    loading.remove();
-  }
-
-  if (!sentReadyMessage && window.parent !== window) {
-    sentReadyMessage = true;
-    window.parent.postMessage({ type: "KAUFBOT_READY" }, "*");
-  }
-}
 
   function resetReadyState() {
-  kaufbotReady = false;
-  sentReadyMessage = false;
-  goodFrameCount = 0;
-  videoStreamReady = false;
-  audioStreamReady = false;
+    kaufbotReady = false;
+    sentReadyMessage = false;
+    goodFrameCount = 0;
+    videoStreamReady = false;
+    audioStreamReady = false;
 
-  if (readyTimeout) {
-    clearTimeout(readyTimeout);
-    readyTimeout = null;
-  }
+    if (readyTimeout) {
+      clearTimeout(readyTimeout);
+      readyTimeout = null;
+    }
 
-  if (canvas) {
-    canvas.style.opacity = "0";
-  }
+    if (canvas) {
+      canvas.style.opacity = "0";
+    }
 
-  if (logoEl) {
-    logoEl.style.opacity = "0";
+    if (logoEl) {
+      logoEl.style.opacity = "0";
+    }
   }
-}
 
   function animateLogo() {
     if (!logoEl) return;
 
     const t = performance.now() * 0.002;
-
     const y = Math.sin(t) * 0.4;
     const rotate = Math.sin(t * 0.7) * 0.2;
     const scale = 1 + Math.sin(t * 0.5) * 0.002;
@@ -102,87 +101,80 @@
   }
 
   function startChromaKey() {
-  if (!hiddenVideo || !canvas || !ctx) return;
+    if (!hiddenVideo || !canvas || !ctx) return;
 
-  ctx.imageSmoothingEnabled = true;
-  if ("imageSmoothingQuality" in ctx) {
-    ctx.imageSmoothingQuality = "high";
-  }
+    ctx.imageSmoothingEnabled = true;
+    if ("imageSmoothingQuality" in ctx) {
+      ctx.imageSmoothingQuality = "high";
+    }
 
-  const draw = () => {
-    if (hiddenVideo.readyState >= 2) {
-      const videoWidth = hiddenVideo.videoWidth;
-      const videoHeight = hiddenVideo.videoHeight;
+    const draw = () => {
+      if (hiddenVideo.readyState >= 2) {
+        const videoWidth = hiddenVideo.videoWidth;
+        const videoHeight = hiddenVideo.videoHeight;
 
-      if (videoWidth && videoHeight) {
-        if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
-          canvas.width = videoWidth;
-          canvas.height = videoHeight;
-        }
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(hiddenVideo, 0, 0, videoWidth, videoHeight);
-
-        const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = frame.data;
-
-        for (let i = 0; i < data.length; i += 4) {
-          let r = data[i];
-          let g = data[i + 1];
-          let b = data[i + 2];
-          let a = data[i + 3];
-
-          const greenDominance = g - Math.max(r, b);
-
-          if (g > 95 && greenDominance > 28) {
-            a = 0;
-          } else if (g > 70 && greenDominance > 12) {
-            const spill = Math.min(1, (greenDominance - 12) / 28);
-            g = g * (1 - spill * 0.7);
-            r = r + spill * 10;
-            b = b + spill * 10;
-            a = a * (1 - spill * 0.35);
+        if (videoWidth && videoHeight) {
+          if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
+            canvas.width = videoWidth;
+            canvas.height = videoHeight;
           }
 
-          data[i] = r;
-          data[i + 1] = g;
-          data[i + 2] = b;
-          data[i + 3] = a;
-        }
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(hiddenVideo, 0, 0, videoWidth, videoHeight);
 
-        ctx.putImageData(frame, 0, 0);
+          const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = frame.data;
 
-        animateLogo();
+          for (let i = 0; i < data.length; i += 4) {
+            let r = data[i];
+            let g = data[i + 1];
+            let b = data[i + 2];
+            let a = data[i + 3];
 
-        if (!kaufbotReady) {
-          const minWidth = 480;
-          const minHeight = 720;
+            const greenDominance = g - Math.max(r, b);
 
-          if (videoWidth >= minWidth && videoHeight >= minHeight) {
-            goodFrameCount++;
-          } else {
-            goodFrameCount = 0;
+            if (g > 95 && greenDominance > 28) {
+              a = 0;
+            } else if (g > 70 && greenDominance > 12) {
+              const spill = Math.min(1, (greenDominance - 12) / 28);
+              g = g * (1 - spill * 0.7);
+              r = r + spill * 10;
+              b = b + spill * 10;
+              a = a * (1 - spill * 0.35);
+            }
+
+            data[i] = r;
+            data[i + 1] = g;
+            data[i + 2] = b;
+            data[i + 3] = a;
           }
 
-          if (goodFrameCount >= 6) {
-            videoStreamReady = true;
-            markReady();
+          ctx.putImageData(frame, 0, 0);
+          animateLogo();
 
-            setTimeout(() => {
-              if (logoEl) {
-                logoEl.style.opacity = "0.95";
-              }
-            }, 180);
+          if (!kaufbotReady) {
+            const minWidth = 480;
+            const minHeight = 720;
+
+            if (videoWidth >= minWidth && videoHeight >= minHeight) {
+              goodFrameCount++;
+            } else {
+              goodFrameCount = 0;
+            }
+
+            if (goodFrameCount >= 6) {
+              videoStreamReady = true;
+              markReady();
+
+              setTimeout(() => {
+                if (logoEl) {
+                  logoEl.style.opacity = "0.95";
+                }
+              }, 180);
+            }
           }
         }
       }
-    }
-
-    animationId = requestAnimationFrame(draw);
-  };
-
-  draw();
-}
 
       animationId = requestAnimationFrame(draw);
     };
@@ -191,34 +183,38 @@
   }
 
   function attachMedia() {
-  if (remoteVideoTrack) {
-    hiddenVideo.srcObject = new MediaStream([remoteVideoTrack]);
-    hiddenVideo.onloadedmetadata = () => {
-      hiddenVideo.play().catch(console.warn);
-      startChromaKey();
-    };
-  }
+    if (remoteVideoTrack) {
+      hiddenVideo.srcObject = new MediaStream([remoteVideoTrack]);
+      hiddenVideo.onloadedmetadata = () => {
+        hiddenVideo.play().catch(console.warn);
+        startChromaKey();
+      };
+    }
 
-  if (remoteAudioTrack) {
-    hiddenAudio.srcObject = new MediaStream([remoteAudioTrack]);
-    hiddenAudio.play().catch(console.warn);
-    hiddenAudio.muted = true;
-    audioStreamReady = true;
-    markReady();
+    if (remoteAudioTrack) {
+      hiddenAudio.srcObject = new MediaStream([remoteAudioTrack]);
+      hiddenAudio.muted = true;
+      hiddenAudio.volume = 1;
+      hiddenAudio.play().catch(console.warn);
+      audioStreamReady = true;
+      markReady();
+    }
   }
-}
 
   async function initKaufBot() {
     try {
-      const response = await fetch("https://growthmatixuk-kaufbot-widget.vercel.app/api/conversation", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          pageContext
-        })
-      });
+      const response = await fetch(
+        "https://growthmatixuk-kaufbot-widget.vercel.app/api/conversation",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            pageContext
+          })
+        }
+      );
 
       sessionData = await response.json();
 
@@ -282,10 +278,13 @@
           if (!payload) return;
 
           if (window.parent !== window) {
-            window.parent.postMessage({
-              type: "KAUFBOT_DEBUG_APP_MESSAGE",
-              payload
-            }, "*");
+            window.parent.postMessage(
+              {
+                type: "KAUFBOT_DEBUG_APP_MESSAGE",
+                payload
+              },
+              "*"
+            );
           }
 
           if (!String(payload.event_type || "").startsWith("conversation.utterance")) {
@@ -331,9 +330,7 @@
             text.includes("see");
 
           if (!requestIntent) {
-            window.parent.postMessage({
-              type: "KAUFBOT_CLEAR_LINK"
-            }, "*");
+            window.parent.postMessage({ type: "KAUFBOT_CLEAR_LINK" }, "*");
             return;
           }
 
@@ -344,10 +341,7 @@
             text.includes("professional portrait") ||
             text.includes("linkedin")
           ) {
-            window.parent.postMessage({
-              type: "KAUFBOT_SUGGEST_LINK",
-              slug: "headshot"
-            }, "*");
+            window.parent.postMessage({ type: "KAUFBOT_SUGGEST_LINK", slug: "headshot" }, "*");
             return;
           }
 
@@ -360,10 +354,10 @@
             text.includes("child") ||
             text.includes("seniors")
           ) {
-            window.parent.postMessage({
-              type: "KAUFBOT_SUGGEST_LINK",
-              slug: "newborn-kids-and-seniors"
-            }, "*");
+            window.parent.postMessage(
+              { type: "KAUFBOT_SUGGEST_LINK", slug: "newborn-kids-and-seniors" },
+              "*"
+            );
             return;
           }
 
@@ -374,10 +368,10 @@
             text.includes("textured") ||
             text.includes("masters")
           ) {
-            window.parent.postMessage({
-              type: "KAUFBOT_SUGGEST_LINK",
-              slug: "masters-textures-and-fine-art"
-            }, "*");
+            window.parent.postMessage(
+              { type: "KAUFBOT_SUGGEST_LINK", slug: "masters-textures-and-fine-art" },
+              "*"
+            );
             return;
           }
 
@@ -386,21 +380,12 @@
             text.includes("outdoor") ||
             text.includes("outside")
           ) {
-            window.parent.postMessage({
-              type: "KAUFBOT_SUGGEST_LINK",
-              slug: "exterior"
-            }, "*");
+            window.parent.postMessage({ type: "KAUFBOT_SUGGEST_LINK", slug: "exterior" }, "*");
             return;
           }
 
-          if (
-            text.includes("floor") ||
-            text.includes("floors")
-          ) {
-            window.parent.postMessage({
-              type: "KAUFBOT_SUGGEST_LINK",
-              slug: "floors"
-            }, "*");
+          if (text.includes("floor") || text.includes("floors")) {
+            window.parent.postMessage({ type: "KAUFBOT_SUGGEST_LINK", slug: "floors" }, "*");
             return;
           }
 
@@ -410,10 +395,10 @@
             text.includes("plain backdrop") ||
             text.includes("plain background")
           ) {
-            window.parent.postMessage({
-              type: "KAUFBOT_SUGGEST_LINK",
-              slug: "solid-seamless"
-            }, "*");
+            window.parent.postMessage(
+              { type: "KAUFBOT_SUGGEST_LINK", slug: "solid-seamless" },
+              "*"
+            );
             return;
           }
 
@@ -422,10 +407,7 @@
             text.includes("indoors") ||
             text.includes("room")
           ) {
-            window.parent.postMessage({
-              type: "KAUFBOT_SUGGEST_LINK",
-              slug: "interior"
-            }, "*");
+            window.parent.postMessage({ type: "KAUFBOT_SUGGEST_LINK", slug: "interior" }, "*");
             return;
           }
 
@@ -433,10 +415,10 @@
             text.includes("signature") ||
             text.includes("signature collection")
           ) {
-            window.parent.postMessage({
-              type: "KAUFBOT_SUGGEST_LINK",
-              slug: "signature-collections"
-            }, "*");
+            window.parent.postMessage(
+              { type: "KAUFBOT_SUGGEST_LINK", slug: "signature-collections" },
+              "*"
+            );
             return;
           }
 
@@ -448,10 +430,7 @@
             text.includes("easter") ||
             text.includes("valentine")
           ) {
-            window.parent.postMessage({
-              type: "KAUFBOT_SUGGEST_LINK",
-              slug: "holidays"
-            }, "*");
+            window.parent.postMessage({ type: "KAUFBOT_SUGGEST_LINK", slug: "holidays" }, "*");
             return;
           }
 
@@ -461,18 +440,12 @@
             text.includes("flowers") ||
             text.includes("botanical")
           ) {
-            window.parent.postMessage({
-              type: "KAUFBOT_SUGGEST_LINK",
-              slug: "floral"
-            }, "*");
+            window.parent.postMessage({ type: "KAUFBOT_SUGGEST_LINK", slug: "floral" }, "*");
             return;
           }
 
           if (text.includes("clicki")) {
-            window.parent.postMessage({
-              type: "KAUFBOT_SUGGEST_LINK",
-              slug: "clicki"
-            }, "*");
+            window.parent.postMessage({ type: "KAUFBOT_SUGGEST_LINK", slug: "clicki" }, "*");
             return;
           }
 
@@ -481,10 +454,7 @@
             text.includes("magna-fix") ||
             text.includes("magnetic")
           ) {
-            window.parent.postMessage({
-              type: "KAUFBOT_SUGGEST_LINK",
-              slug: "magna-fix"
-            }, "*");
+            window.parent.postMessage({ type: "KAUFBOT_SUGGEST_LINK", slug: "magna-fix" }, "*");
             return;
           }
 
@@ -494,10 +464,7 @@
             text.includes("discount") ||
             text.includes("reduced")
           ) {
-            window.parent.postMessage({
-              type: "KAUFBOT_SUGGEST_LINK",
-              slug: "clearance"
-            }, "*");
+            window.parent.postMessage({ type: "KAUFBOT_SUGGEST_LINK", slug: "clearance" }, "*");
             return;
           }
 
@@ -507,16 +474,14 @@
             text.includes("backdrop roller") ||
             text.includes("roller")
           ) {
-            window.parent.postMessage({
-              type: "KAUFBOT_SUGGEST_LINK",
-              slug: "roller-systems"
-            }, "*");
+            window.parent.postMessage(
+              { type: "KAUFBOT_SUGGEST_LINK", slug: "roller-systems" },
+              "*"
+            );
             return;
           }
 
-          window.parent.postMessage({
-            type: "KAUFBOT_CLEAR_LINK"
-          }, "*");
+          window.parent.postMessage({ type: "KAUFBOT_CLEAR_LINK" }, "*");
         } catch (e) {
           console.warn("CTA detection error", e);
         }
@@ -549,10 +514,6 @@
 
       joined = true;
       await call.setLocalAudio(false);
-
-      readyTimeout = setTimeout(() => {
-        markReady();
-      }, 2200);
     } catch (err) {
       console.error("Join error:", err);
       if (loading) {
@@ -578,25 +539,25 @@
     conversationActivated = false;
   }
 
- async function sendWelcomeMessage() {
-  if (!call || !sessionData?.conversation_id) return;
+  async function sendWelcomeMessage() {
+    if (!call || !sessionData?.conversation_id) return;
 
-  const interaction = {
-    message_type: "conversation",
-    event_type: "conversation.echo",
-    conversation_id: sessionData.conversation_id,
-    properties: {
-      text: WELCOME_TEXT
+    const interaction = {
+      message_type: "conversation",
+      event_type: "conversation.echo",
+      conversation_id: sessionData.conversation_id,
+      properties: {
+        text: WELCOME_TEXT
+      }
+    };
+
+    try {
+      console.log("Sending welcome echo");
+      call.sendAppMessage(interaction, "*");
+    } catch (err) {
+      console.warn("Failed to send welcome echo", err);
     }
-  };
-
-  try {
-    console.log("Sending welcome echo");
-    call.sendAppMessage(interaction, "*");
-  } catch (err) {
-    console.warn("Failed to send welcome echo", err);
   }
-}
 
   await initKaufBot();
   await joinKaufBot();
@@ -605,19 +566,19 @@
     if (!event.data) return;
 
     if (event.data.type === "KAUFBOT_PLAY_GREETING" && call && joined) {
-  console.log("PLAY_GREETING received");
+      console.log("PLAY_GREETING received");
 
-  if (hiddenAudio) {
-    hiddenAudio.muted = false;
-    hiddenAudio.volume = 1;
-    hiddenAudio.play().catch(() => {});
-  }
+      if (hiddenAudio) {
+        hiddenAudio.muted = false;
+        hiddenAudio.volume = 1;
+        hiddenAudio.play().catch(() => {});
+      }
 
-  micMuted = true;
-  await call.setLocalAudio(false);
-  await sendWelcomeMessage();
-  return;
-}
+      micMuted = true;
+      await call.setLocalAudio(false);
+      await sendWelcomeMessage();
+      return;
+    }
 
     if (event.data.type === "KAUFBOT_START_TALKING" && call && joined) {
       conversationActivated = true;
@@ -652,7 +613,6 @@
     }
 
     if (event.data.type === "KAUFBOT_PANEL_OPENED") {
-      // intentionally do nothing here
       return;
     }
 
