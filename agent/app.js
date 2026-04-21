@@ -24,6 +24,8 @@
   let joined = false;
   let remoteVideoTrack = null;
   let remoteAudioTrack = null;
+  let videoStreamReady = false;
+  let audioStreamReady = false;
 
   let kaufbotReady = false;
   let sentReadyMessage = false;
@@ -37,47 +39,50 @@
   "Hi, I’m KaufBot! Welcome to Click Backdrops… Click 'Start talking' and let’s chat.";
 
   function markReady() {
-    if (kaufbotReady) return;
+  if (kaufbotReady) return;
+  if (!videoStreamReady || !audioStreamReady) return;
 
-    kaufbotReady = true;
+  kaufbotReady = true;
 
-    if (canvas) {
-      canvas.style.opacity = "1";
-    }
-
-    const logo = document.getElementById("kaufbot-logo");
-    if (logo) {
-      logo.style.opacity = "1";
-    }
-
-    if (loading) {
-      loading.remove();
-    }
-
-    if (!sentReadyMessage && window.parent !== window) {
-      sentReadyMessage = true;
-      window.parent.postMessage({ type: "KAUFBOT_READY" }, "*");
-    }
+  if (canvas) {
+    canvas.style.opacity = "1";
   }
+
+  const logo = document.getElementById("kaufbot-logo");
+  if (logo) {
+    logo.style.opacity = "1";
+  }
+
+  if (loading) {
+    loading.remove();
+  }
+
+  if (!sentReadyMessage && window.parent !== window) {
+    sentReadyMessage = true;
+    window.parent.postMessage({ type: "KAUFBOT_READY" }, "*");
+  }
+}
 
   function resetReadyState() {
-    kaufbotReady = false;
-    sentReadyMessage = false;
-    goodFrameCount = 0;
+  kaufbotReady = false;
+  sentReadyMessage = false;
+  goodFrameCount = 0;
+  videoStreamReady = false;
+  audioStreamReady = false;
 
-    if (readyTimeout) {
-      clearTimeout(readyTimeout);
-      readyTimeout = null;
-    }
-
-    if (canvas) {
-      canvas.style.opacity = "0";
-    }
-
-    if (logoEl) {
-      logoEl.style.opacity = "0";
-    }
+  if (readyTimeout) {
+    clearTimeout(readyTimeout);
+    readyTimeout = null;
   }
+
+  if (canvas) {
+    canvas.style.opacity = "0";
+  }
+
+  if (logoEl) {
+    logoEl.style.opacity = "0";
+  }
+}
 
   function animateLogo() {
     if (!logoEl) return;
@@ -160,17 +165,15 @@
             }
 
             if (goodFrameCount >= 6) {
-              markReady();
+  videoStreamReady = true;
+  markReady();
 
-              setTimeout(() => {
-                if (logoEl) {
-                  logoEl.style.opacity = "0.95";
-                }
-              }, 180);
-            }
-          }
-        }
-      }
+  setTimeout(() => {
+    if (logoEl) {
+      logoEl.style.opacity = "0.95";
+    }
+  }, 180);
+}
 
       animationId = requestAnimationFrame(draw);
     };
@@ -179,23 +182,22 @@
   }
 
   function attachMedia() {
-    if (remoteVideoTrack) {
-      hiddenVideo.srcObject = new MediaStream([remoteVideoTrack]);
-      hiddenVideo.onloadedmetadata = () => {
-        hiddenVideo.play().catch(console.warn);
-        startChromaKey();
-      };
-    }
-
-    if (remoteAudioTrack) {
-      hiddenAudio.srcObject = new MediaStream([remoteAudioTrack]);
-      hiddenAudio.play().catch(console.warn);
-    }
-
-    if (hiddenAudio) {
-      hiddenAudio.muted = true;
-    }
+  if (remoteVideoTrack) {
+    hiddenVideo.srcObject = new MediaStream([remoteVideoTrack]);
+    hiddenVideo.onloadedmetadata = () => {
+      hiddenVideo.play().catch(console.warn);
+      startChromaKey();
+    };
   }
+
+  if (remoteAudioTrack) {
+    hiddenAudio.srcObject = new MediaStream([remoteAudioTrack]);
+    hiddenAudio.play().catch(console.warn);
+    hiddenAudio.muted = true;
+    audioStreamReady = true;
+    markReady();
+  }
+}
 
   async function initKaufBot() {
     try {
@@ -575,12 +577,12 @@
     event_type: "conversation.echo",
     conversation_id: sessionData.conversation_id,
     properties: {
-      text: WELCOME_TEXT,
-      modality: "speech"
+      text: WELCOME_TEXT
     }
   };
 
   try {
+    console.log("Sending welcome echo");
     call.sendAppMessage(interaction, "*");
   } catch (err) {
     console.warn("Failed to send welcome echo", err);
@@ -594,17 +596,19 @@
     if (!event.data) return;
 
     if (event.data.type === "KAUFBOT_PLAY_GREETING" && call && joined) {
-      if (hiddenAudio) {
-        hiddenAudio.muted = false;
-        hiddenAudio.volume = 1;
-        hiddenAudio.play().catch(() => {});
-      }
+  console.log("PLAY_GREETING received");
 
-      micMuted = true;
-      await call.setLocalAudio(false);
-      await sendWelcomeMessage();
-      return;
-    }
+  if (hiddenAudio) {
+    hiddenAudio.muted = false;
+    hiddenAudio.volume = 1;
+    hiddenAudio.play().catch(() => {});
+  }
+
+  micMuted = true;
+  await call.setLocalAudio(false);
+  await sendWelcomeMessage();
+  return;
+}
 
     if (event.data.type === "KAUFBOT_START_TALKING" && call && joined) {
       conversationActivated = true;
