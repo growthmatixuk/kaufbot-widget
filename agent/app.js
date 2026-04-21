@@ -36,13 +36,12 @@
   let conversationActivated = false;
   let isProcessingProductReply = false;
 
-  // ✅ DEFINE FIRST
   const SESSION_KEYS = {
     startTalkingPlayed: "kaufbot_start_talking_played"
   };
 
-  // ✅ SAFE INIT
   let hasPlayedStartTalkingIntro = false;
+  
   try {
     hasPlayedStartTalkingIntro =
       sessionStorage.getItem(SESSION_KEYS.startTalkingPlayed) === "1";
