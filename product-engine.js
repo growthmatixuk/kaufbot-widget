@@ -8,6 +8,10 @@ const STANDARD_SIZE_ORDER = ["S", "M", "L", "XL", "XXL"];
 const STANDARD_SIZE_INDEX = new Map(STANDARD_SIZE_ORDER.map((size, idx) => [size, idx]));
 
 const SCORE_WEIGHTS = {
+  titleExactMeaningfulPhrase: 320,
+  titleContainsMeaningfulPhrase: 220,
+  titleAllMeaningfulTokensMatched: 180,
+  titleMultiMeaningfulTokenBonus: 35,
   titleExactToken: 40,
   titleContainsToken: 24,
   tagGenreCategoryContainsToken: 14,
@@ -15,6 +19,26 @@ const SCORE_WEIGHTS = {
   descriptionContainsToken: 6,
   multiTokenBonusPerExtraToken: 5
 };
+
+const STOP_WORDS = new Set([
+  "what",
+  "is",
+  "the",
+  "a",
+  "an",
+  "option",
+  "options",
+  "please",
+  "show",
+  "me",
+  "do",
+  "you",
+  "have"
+]);
+
+const GENERIC_TOKEN_WEIGHT_MULTIPLIER = new Map([
+  ["wall", 0.6]
+]);
 
 function loadProducts() {
   const raw = fs.readFileSync(dataFile, "utf8");
@@ -53,6 +77,25 @@ function tokenizeQuery(query) {
     .map((token) => token.trim())
     .filter(Boolean)
     .filter((token) => token.length > 1 || /[a-z0-9]/i.test(token));
+}
+
+function extractMeaningfulTokens(query) {
+  return tokenizeQuery(query).filter((token) => !STOP_WORDS.has(token));
+}
+
+function buildMeaningfulPhrase(tokens) {
+  if (!Array.isArray(tokens) || tokens.length === 0) {
+    return "";
+  }
+  return tokens.join(" ");
+}
+
+function tokenizeTitle(title) {
+  return normalizeText(title).split(/[^a-z0-9]+/).filter(Boolean);
+}
+
+function computeTokenScoreWeight(token) {
+  return GENERIC_TOKEN_WEIGHT_MULTIPLIER.get(token) ?? 1;
 }
 
 function variantMatchesSize(variant, preferences = {}) {
@@ -114,39 +157,66 @@ function scoreTokenAgainstProduct(product, token) {
   const genres = toArray(product.genres).map(normalizeText);
   const titleWords = title.split(/[^a-z0-9]+/).filter(Boolean);
 
+  const tokenWeight = computeTokenScoreWeight(token);
+
   if (titleWords.includes(token)) {
-    score += SCORE_WEIGHTS.titleExactToken;
+    score += SCORE_WEIGHTS.titleExactToken * tokenWeight;
   } else if (title.includes(token)) {
-    score += SCORE_WEIGHTS.titleContainsToken;
+    score += SCORE_WEIGHTS.titleContainsToken * tokenWeight;
   }
 
   if (tags.some((value) => value.includes(token))) {
-    score += SCORE_WEIGHTS.tagGenreCategoryContainsToken;
+    score += SCORE_WEIGHTS.tagGenreCategoryContainsToken * tokenWeight;
   }
   if (genres.some((value) => value.includes(token))) {
-    score += SCORE_WEIGHTS.tagGenreCategoryContainsToken;
+    score += SCORE_WEIGHTS.tagGenreCategoryContainsToken * tokenWeight;
   }
   if (primaryCategory.includes(token) || categoryPath.some((value) => value.includes(token))) {
-    score += SCORE_WEIGHTS.tagGenreCategoryContainsToken;
+    score += SCORE_WEIGHTS.tagGenreCategoryContainsToken * tokenWeight;
   }
   if (material.includes(token) || colour.includes(token)) {
-    score += SCORE_WEIGHTS.materialColourContainsToken;
+    score += SCORE_WEIGHTS.materialColourContainsToken * tokenWeight;
   }
   if (description.includes(token)) {
-    score += SCORE_WEIGHTS.descriptionContainsToken;
+    score += SCORE_WEIGHTS.descriptionContainsToken * tokenWeight;
   }
 
   return score;
 }
 
 function scoreProduct(product, query) {
-  const tokens = tokenizeQuery(query);
+  const allTokens = tokenizeQuery(query);
+  const meaningfulTokens = extractMeaningfulTokens(query);
+  const scoringTokens = meaningfulTokens.length > 0 ? meaningfulTokens : allTokens;
+  const meaningfulPhrase = buildMeaningfulPhrase(meaningfulTokens);
+  const title = normalizeText(product.title);
+  const titleWords = tokenizeTitle(product.title);
+  const uniqueMeaningfulTokens = [...new Set(meaningfulTokens)];
+  const matchedMeaningfulTitleTokens = uniqueMeaningfulTokens.filter((token) => titleWords.includes(token));
+
+  const tokens = scoringTokens;
   if (tokens.length === 0) {
     return 0;
   }
 
   let totalScore = 0;
   let matchedTokenCount = 0;
+
+  if (meaningfulPhrase) {
+    if (title === meaningfulPhrase) {
+      totalScore += SCORE_WEIGHTS.titleExactMeaningfulPhrase;
+    } else if (title.includes(meaningfulPhrase)) {
+      totalScore += SCORE_WEIGHTS.titleContainsMeaningfulPhrase;
+    }
+  }
+
+  if (uniqueMeaningfulTokens.length > 1 && matchedMeaningfulTitleTokens.length === uniqueMeaningfulTokens.length) {
+    totalScore += SCORE_WEIGHTS.titleAllMeaningfulTokensMatched;
+  }
+
+  if (matchedMeaningfulTitleTokens.length >= 2) {
+    totalScore += SCORE_WEIGHTS.titleMultiMeaningfulTokenBonus;
+  }
 
   for (const token of tokens) {
     const tokenScore = scoreTokenAgainstProduct(product, token);
@@ -227,7 +297,9 @@ function findBestVariant(product, preferences = {}) {
 }
 
 function searchProducts(query, options = {}) {
-  const tokens = tokenizeQuery(query);
+  const allTokens = tokenizeQuery(query);
+  const meaningfulTokens = extractMeaningfulTokens(query);
+  const matchingTokens = meaningfulTokens.length > 0 ? meaningfulTokens : allTokens;
   const limitValue = Number.parseInt(options.limit, 10);
   const limit = Number.isFinite(limitValue) && limitValue > 0 ? limitValue : DEFAULT_LIMIT;
 
@@ -244,8 +316,8 @@ function searchProducts(query, options = {}) {
     }
 
     const queryMatched =
-      tokens.length === 0 ||
-      tokens.some((token) => scoreTokenAgainstProduct(product, token) > 0);
+      matchingTokens.length === 0 ||
+      matchingTokens.some((token) => scoreTokenAgainstProduct(product, token) > 0);
 
     if (!queryMatched) {
       continue;

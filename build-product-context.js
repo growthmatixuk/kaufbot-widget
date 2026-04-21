@@ -1,4 +1,4 @@
-const { searchProducts, formatProductSummary, normalizeText } = require("./product-engine");
+const { searchProducts, formatProductSummary, normalizeText, findBestVariant } = require("./product-engine");
 
 const PRODUCT_SIGNALS = [
   "backdrop",
@@ -35,6 +35,16 @@ const PRODUCT_SIGNALS = [
   "show me",
   "do you have"
 ];
+
+const PRICE_INTENT_TERMS = new Set([
+  "cheapest",
+  "cheap",
+  "price",
+  "prices",
+  "cost",
+  "costs",
+  "pricing"
+]);
 
 const FILTER_HINTS = {
   material: {
@@ -107,6 +117,26 @@ function uniqueStrings(values) {
   return [...new Set(values.filter(Boolean))];
 }
 
+function hasPriceIntent(userMessage, pageContext = {}) {
+  const combinedText = joinContextText(userMessage, pageContext);
+  if (!combinedText) {
+    return false;
+  }
+
+  return [...PRICE_INTENT_TERMS].some((term) => combinedText.includes(term));
+}
+
+function buildProductMatchQuery(userMessage, pageContext = {}) {
+  const combinedText = joinContextText(userMessage, pageContext);
+  if (!combinedText) {
+    return "";
+  }
+
+  const tokens = combinedText.split(/\s+/).filter(Boolean);
+  const withoutPriceTerms = tokens.filter((token) => !PRICE_INTENT_TERMS.has(token));
+  return withoutPriceTerms.join(" ").trim();
+}
+
 function buildSummary(results) {
   const titles = uniqueStrings(results.map((item) => item.title));
   const categories = uniqueStrings(results.map((item) => item.primary_category));
@@ -131,8 +161,14 @@ function buildProductContext(userMessage, pageContext = {}) {
   }
 
   const filters = inferFilters(userMessage, pageContext);
-  const matchedProducts = searchProducts(userMessage, { ...filters, limit: 3 });
-  const results = matchedProducts.map((product) => formatProductSummary(product));
+  const priceIntent = hasPriceIntent(userMessage, pageContext);
+  const productMatchQuery = buildProductMatchQuery(userMessage, pageContext);
+  const searchQuery = productMatchQuery || userMessage;
+  const matchedProducts = searchProducts(searchQuery, { ...filters, limit: 3 });
+  const results = matchedProducts.map((product) => {
+    const variant = priceIntent ? findBestVariant(product, { cheapest: true }) : null;
+    return formatProductSummary(product, variant);
+  });
   const summary = buildSummary(results);
 
   return {
