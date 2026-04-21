@@ -160,6 +160,88 @@ function buildProductContext(userMessage, pageContext = {}) {
     };
   }
 
+  const normalizedMessage = (userMessage || "").toLowerCase().trim();
+
+const nonProductOnlyPhrases = [
+  "hi",
+  "hiya",
+  "hey",
+  "hello",
+  "hello?",
+  "yo",
+  "good morning",
+  "good afternoon",
+  "good evening",
+  "how are you",
+  "how are you?",
+  "are you there",
+  "thanks",
+  "thank you",
+  "ok",
+  "okay",
+  "cool",
+  "nice"
+];
+
+if (!normalizedMessage || nonProductOnlyPhrases.includes(normalizedMessage)) {
+  return {
+    isProductQuery: false,
+    results: [],
+    summary: null
+  };
+}
+
+  const productSignals = [
+  "backdrop",
+  "backdrops",
+  "background",
+  "backgrounds",
+  "vinyl",
+  "profabric",
+  "profold",
+  "clicki",
+  "magna",
+  "magna-fix",
+  "newborn",
+  "portrait",
+  "portraits",
+  "headshot",
+  "headshots",
+  "floral",
+  "exterior",
+  "interior",
+  "fine art",
+  "floor",
+  "floors",
+  "holiday",
+  "seamless",
+  "product photography",
+  "cake smash",
+  "size",
+  "sizes",
+  "price",
+  "cost",
+  "how much",
+  "cheapest",
+  "recommend",
+  "suggestion",
+  "looking for",
+  "show me",
+  "do you have"
+];
+
+const hasProductSignal = productSignals.some(signal =>
+  normalizedMessage.includes(signal)
+);
+
+if (!hasProductSignal) {
+  return {
+    isProductQuery: false,
+    results: [],
+    summary: null
+  };
+}
+
   const filters = inferFilters(userMessage, pageContext);
   const priceIntent = hasPriceIntent(userMessage, pageContext);
   const productMatchQuery = buildProductMatchQuery(userMessage, pageContext);
