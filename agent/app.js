@@ -311,7 +311,15 @@
 
           if (!text) return;
 
-          console.log("USER SAID:", text);
+console.log("USER SAID:", text);
+
+fetchProductContext(text).then(async (productContext) => {
+  if (productContext?.isProductQuery && productContext.results?.length) {
+    await sendProductContextToConversation(productContext);
+  }
+}).catch((err) => {
+  console.warn("Live product context error", err);
+});
 
           const requestIntent =
             text.includes("show me") ||
@@ -583,6 +591,71 @@
       console.warn("Failed to send spoken line", err);
     }
   }
+
+  async function fetchProductContext(message) {
+  try {
+    const response = await fetch("https://growthmatixuk-kaufbot-widget.vercel.app/api/product-context", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message,
+        pageContext
+      })
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.warn("Product context fetch failed", err);
+    return null;
+  }
+}
+
+async function sendProductContextToConversation(productContext) {
+  if (!call || !sessionData?.conversation_id) return;
+  if (!productContext?.results?.length) return;
+
+  const compactText = productContext.results
+    .slice(0, 3)
+    .map((p, i) => {
+      const v = p.variant || {};
+      return [
+        `${i + 1}. ${p.title}`,
+        `Material: ${p.material || "n/a"}`,
+        `Category: ${p.primary_category || "n/a"}`,
+        `Colour: ${p.colour || "n/a"}`,
+        `Size: ${v.size_imperial || v.size_metric || v.size_label || "n/a"}`,
+        `GBP: ${v.price_gbp ?? "n/a"}`,
+        `USD: ${v.price_usd ?? "n/a"}`,
+        `EUR: ${v.price_eur ?? "n/a"}`
+      ].join(" | ");
+    })
+    .join("\n");
+
+  const interaction = {
+    message_type: "conversation",
+    event_type: "conversation.respond",
+    conversation_id: sessionData.conversation_id,
+    properties: {
+      text:
+        "Relevant product data for the user's latest query:\n" +
+        compactText +
+        "\nUse this data to answer accurately, naturally, and concisely."
+    }
+  };
+
+  try {
+    console.log("Sending product context");
+    call.sendAppMessage(interaction, "*");
+  } catch (err) {
+    console.warn("Failed to send product context", err);
+  }
+}
 
   await initKaufBot();
   await joinKaufBot();
