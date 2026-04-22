@@ -2,6 +2,8 @@
   if (window.__kaufbotLoaded) return;
   window.__kaufbotLoaded = true;
 
+return;
+  
   const blockedPaths = [
     "/cart",
     "/checkout",
