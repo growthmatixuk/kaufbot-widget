@@ -579,11 +579,14 @@
     }
   }
 
-  function openKaufbot() {
-    if (destroyTimer) {
-      clearTimeout(destroyTimer);
-      destroyTimer = null;
-    }
+ function openKaufbot() {
+  hasPlayedGreeting = false;
+  pendingGreeting = true;
+
+  if (destroyTimer) {
+    clearTimeout(destroyTimer);
+    destroyTimer = null;
+  }
 
     if (loadingFallbackTimer) {
       clearTimeout(loadingFallbackTimer);
