@@ -35,7 +35,6 @@
   let micMuted = true;
   let conversationActivated = false;
   let isProcessingProductReply = false;
-
   let hasPlayedStartTalkingIntro = false;
 
   const WELCOME_TEXT =
@@ -43,6 +42,24 @@
 
   const START_TALKING_TEXT =
     "Great, I can hear you now… How can I help you today?";
+
+  function normalizeUserText(text) {
+    return String(text || "")
+      .toLowerCase()
+      .replace(/\bclicky\b/g, "clicki")
+      .replace(/\bclick ee\b/g, "clicki")
+      .replace(/\bclick-ie\b/g, "clicki")
+      .replace(/\bmagna fix\b/g, "magna-fix")
+      .trim();
+  }
+
+  function formatPriceForSpeech(price) {
+    if (price === null || price === undefined || price === "" || Number.isNaN(Number(price))) {
+      return "price unavailable";
+    }
+
+    return `${Number(price)} pounds`;
+  }
 
   function markReady() {
     if (kaufbotReady) return;
@@ -156,7 +173,6 @@
           }
 
           ctx.putImageData(frame, 0, 0);
-
           animateLogo();
 
           if (!kaufbotReady) {
@@ -300,17 +316,18 @@
 
           const isUser =
             payload?.properties?.role === "user" ||
-            payload?.role === "";
+            payload?.role === "user";
 
-          if (!is) return;
+          if (!isUser) return;
 
-          const text = (
+          const rawText =
             payload?.properties?.speech ||
             payload?.properties?.text ||
             payload?.speech ||
             payload?.text ||
-            ""
-          ).toLowerCase().trim();
+            "";
+
+          const text = normalizeUserText(rawText);
 
           if (!text) return;
 
@@ -646,6 +663,8 @@
     const readableSize =
       variant.size_imperial || variant.size_metric || variant.size_label || "that size";
 
+    const firstPrice = formatPriceForSpeech(variant.price_gbp);
+
     const isCheapestQuery =
       lowerText.includes("cheapest") ||
       lowerText.includes("lowest price") ||
@@ -659,22 +678,22 @@
       lowerText.includes("how much");
 
     if (isCheapestQuery) {
-      return `The cheapest option for ${first.title} is the ${readableSize} version at £${variant.price_gbp}.`;
+      return `The cheapest option for ${first.title} is the ${readableSize} version at ${firstPrice}.`;
     }
 
     if (isPriceQuery) {
-      return `${first.title} is available in ${readableSize} at £${variant.price_gbp}.`;
+      return `${first.title} is available in ${readableSize} at ${firstPrice}.`;
     }
 
     if (productContext.results.length === 1) {
-      return `A good option is ${first.title} in ${readableSize} at £${variant.price_gbp}.`;
+      return `A good option is ${first.title} in ${readableSize} at ${firstPrice}.`;
     }
 
     const second = productContext.results[1];
     const secondVariant = second?.variant || {};
-    const secondPrice = secondVariant.price_gbp ?? "n/a";
+    const secondPrice = formatPriceForSpeech(secondVariant.price_gbp);
 
-    return `A couple of strong options are ${first.title} at £${variant.price_gbp} and ${second.title} at £${secondPrice}.`;
+    return `A couple of strong options are ${first.title} at ${firstPrice} and ${second.title} at ${secondPrice}.`;
   }
 
   async function sendProductReply(text) {
@@ -704,32 +723,32 @@
     if (!event.data) return;
 
     if (event.data.type === "KAUFBOT_PLAY_GREETING") {
-  console.log("PLAY_GREETING received");
+      console.log("PLAY_GREETING received");
 
-  const tryPlayGreeting = async (attempt = 1) => {
-    if (!call || !joined) {
-      if (attempt <= 10) {
-        setTimeout(() => tryPlayGreeting(attempt + 1), 300);
-      } else {
-        console.warn("Greeting failed: call not ready");
-      }
+      const tryPlayGreeting = async (attempt = 1) => {
+        if (!call || !joined) {
+          if (attempt <= 10) {
+            setTimeout(() => tryPlayGreeting(attempt + 1), 300);
+          } else {
+            console.warn("Greeting failed: call not ready");
+          }
+          return;
+        }
+
+        if (hiddenAudio) {
+          hiddenAudio.muted = false;
+          hiddenAudio.volume = 1;
+          hiddenAudio.play().catch(() => {});
+        }
+
+        micMuted = true;
+        await call.setLocalAudio(false);
+        await sendWelcomeMessage();
+      };
+
+      await tryPlayGreeting();
       return;
     }
-
-    if (hiddenAudio) {
-      hiddenAudio.muted = false;
-      hiddenAudio.volume = 1;
-      hiddenAudio.play().catch(() => {});
-    }
-
-    micMuted = true;
-    await call.setLocalAudio(false);
-    await sendWelcomeMessage();
-  };
-
-  await tryPlayGreeting();
-  return;
-}
 
     if (event.data.type === "KAUFBOT_START_TALKING" && call && joined) {
       conversationActivated = true;
@@ -744,10 +763,10 @@
       await call.setLocalAudio(true);
 
       if (!hasPlayedStartTalkingIntro) {
-  hasPlayedStartTalkingIntro = true;
-  console.log("Sending start talking intro");
-  await sendSpokenLine(START_TALKING_TEXT);
-}
+        hasPlayedStartTalkingIntro = true;
+        console.log("Sending start talking intro");
+        await sendSpokenLine(START_TALKING_TEXT);
+      }
 
       return;
     }
