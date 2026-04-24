@@ -712,30 +712,36 @@
     }
 
     if (event.data.type === "KAUFBOT_READY") {
-      agentReady = true;
-      wrap.classList.remove("loading");
+  agentReady = true;
 
-      if (loadingFallbackTimer) {
-        clearTimeout(loadingFallbackTimer);
-        loadingFallbackTimer = null;
-      }
+  wrap.classList.remove("loading");
 
-      const frame = document.getElementById("kaufbot-agent-frame");
-      frame?.classList.add("ready");
+  if (loadingFallbackTimer) {
+    clearTimeout(loadingFallbackTimer);
+    loadingFallbackTimer = null;
+  }
 
-      if (
-        wrap.classList.contains("visible") &&
-        !hasPlayedGreeting &&
-        frame &&
-        frame.contentWindow
-      ) {
-        hasPlayedGreeting = true;
-        sessionStorage.setItem(SESSION_KEYS.greetingPlayed, "1");
-        frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
-      }
+  const frame = document.getElementById("kaufbot-agent-frame");
+  frame?.classList.add("ready");
 
-      return;
-    }
+  // 🔥 THIS is what you were missing
+  if (
+    wrap.classList.contains("visible") &&
+    !hasPlayedGreeting &&
+    frame &&
+    frame.contentWindow
+  ) {
+    hasPlayedGreeting = true;
+    sessionStorage.setItem(SESSION_KEYS.greetingPlayed, "1");
+
+    frame.contentWindow.postMessage(
+      { type: "KAUFBOT_PLAY_GREETING" },
+      "*"
+    );
+  }
+
+  return;
+}
 
     if (event.data.type === "KAUFBOT_SUGGEST_LINK") {
       showSuggestedLink(event.data);
