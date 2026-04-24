@@ -1,15 +1,16 @@
 (function () {
   function bootKaufbot() {
-    if (window.__kaufbotLoaded) return;
-    window.__kaufbotLoaded = true;
+    if (window.__kaufbotLoaded === "active") return;
 
-  const blockedPaths = ["/cart", "/checkout", "/my-account"];
-  const currentPath = location.pathname.toLowerCase();
-  if (blockedPaths.some(path => currentPath.includes(path))) return;
+    const blockedPaths = ["/cart", "/checkout", "/my-account"];
+    const currentPath = location.pathname.toLowerCase();
+    if (blockedPaths.some(path => currentPath.includes(path))) return;
 
-  const ua = navigator.userAgent.toLowerCase();
-  const isBot = /bot|crawl|spider|slurp|facebookexternalhit|preview|headless|wget|curl/.test(ua);
-  if (isBot) return;
+    const ua = navigator.userAgent.toLowerCase();
+    const isBot = /bot|crawl|spider|slurp|facebookexternalhit|headless|wget|curl/.test(ua);
+    if (isBot) return;
+
+    window.__kaufbotLoaded = "active";
 
   const SESSION_KEYS = {
     teaserSeen: "kaufbot_teaser_seen",
