@@ -1,24 +1,24 @@
 (function () {
   if (window.__kaufbotLoaded) return;
   window.__kaufbotLoaded = true;
-  
+
   const blockedPaths = [
     "/cart",
     "/checkout",
     "/my-account"
   ];
 
-    const ua = navigator.userAgent.toLowerCase();
-  const isBot =
-    /bot|crawl|spider|slurp|facebookexternalhit|preview|headless|wget|curl/.test(ua);
-
-  if (isBot) return;
-
   const currentPath = location.pathname.toLowerCase();
 
   if (blockedPaths.some(path => currentPath.includes(path))) {
     return;
   }
+
+  const ua = navigator.userAgent.toLowerCase();
+  const isBot =
+    /bot|crawl|spider|slurp|facebookexternalhit|preview|headless|wget|curl/.test(ua);
+
+  if (isBot) return;
 
   const SESSION_KEYS = {
     teaserSeen: "kaufbot_teaser_seen",
@@ -444,17 +444,6 @@
   document.body.appendChild(launcher);
   document.body.appendChild(wrap);
 
-  const teaserShownAt = Date.now();
-
-  if (!hasSeenTeaserThisSession) {
-    requestAnimationFrame(() => {
-      teaser.classList.add("visible");
-    });
-  } else {
-    teaser.classList.add("hidden");
-    launcher.classList.add("visible");
-  }
-
   const shell = wrap.querySelector("#kaufbot-stage-shell");
   const closeBtn = wrap.querySelector("#kaufbot-close");
   const startBtn = wrap.querySelector("#kaufbot-start-btn");
@@ -478,28 +467,16 @@
     };
   }
 
-  function showLauncherWhenReady() {
+  function showLauncherAfterTeaser() {
     if (launcherShown) return;
     launcherShown = true;
 
-    if (hasSeenTeaserThisSession) {
-      teaser.classList.add("hidden");
-      launcher.classList.add("visible");
-      return;
-    }
-
-    const minTease = 1800;
-    const elapsed = Date.now() - teaserShownAt;
-    const wait = Math.max(0, minTease - elapsed);
+    teaser.classList.add("hidden");
+    sessionStorage.setItem(SESSION_KEYS.teaserSeen, "1");
 
     setTimeout(() => {
-      teaser.classList.add("hidden");
-      sessionStorage.setItem(SESSION_KEYS.teaserSeen, "1");
-
-      setTimeout(() => {
-        launcher.classList.add("visible");
-      }, 180);
-    }, wait);
+      launcher.classList.add("visible");
+    }, 180);
   }
 
   function showSuggestedLink(payload) {
@@ -526,7 +503,7 @@
     linkBtn.classList.remove("visible");
   }
 
-      function mountAgent() {
+  function mountAgent() {
     if (mounted) return;
 
     const pageContext = buildPageContext();
@@ -544,9 +521,6 @@
     shell.appendChild(iframe);
     mounted = true;
   }
-
-  // Do NOT call mountAgent() here.
-  // It must only run after the visitor clicks KaufBot.
 
   function openKaufbot() {
     if (destroyTimer) {
@@ -640,7 +614,6 @@
   }
 
   launcher.addEventListener("click", openKaufbot);
-  teaser.addEventListener("click", openKaufbot);
   closeBtn.addEventListener("click", closeKaufbot);
 
   startBtn.addEventListener("click", () => {
@@ -680,8 +653,6 @@
 
       const frame = document.getElementById("kaufbot-agent-frame");
       frame?.classList.add("visual-ready");
-
-      showLauncherWhenReady();
       return;
     }
 
@@ -690,8 +661,6 @@
 
       const frame = document.getElementById("kaufbot-agent-frame");
       frame?.classList.add("ready");
-
-      showLauncherWhenReady();
 
       if (
         wrap.classList.contains("visible") &&
@@ -717,4 +686,17 @@
       return;
     }
   });
+
+  if (!hasSeenTeaserThisSession) {
+    requestAnimationFrame(() => {
+      teaser.classList.add("visible");
+    });
+
+    setTimeout(() => {
+      showLauncherAfterTeaser();
+    }, 1800);
+  } else {
+    teaser.classList.add("hidden");
+    launcher.classList.add("visible");
+  }
 })();
