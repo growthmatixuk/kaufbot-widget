@@ -2,22 +2,12 @@
   if (window.__kaufbotLoaded) return;
   window.__kaufbotLoaded = true;
 
-  const blockedPaths = [
-    "/cart",
-    "/checkout",
-    "/my-account"
-  ];
-
+  const blockedPaths = ["/cart", "/checkout", "/my-account"];
   const currentPath = location.pathname.toLowerCase();
-
-  if (blockedPaths.some(path => currentPath.includes(path))) {
-    return;
-  }
+  if (blockedPaths.some(path => currentPath.includes(path))) return;
 
   const ua = navigator.userAgent.toLowerCase();
-  const isBot =
-    /bot|crawl|spider|slurp|facebookexternalhit|preview|headless|wget|curl/.test(ua);
-
+  const isBot = /bot|crawl|spider|slurp|facebookexternalhit|preview|headless|wget|curl/.test(ua);
   if (isBot) return;
 
   const SESSION_KEYS = {
@@ -92,12 +82,16 @@
 
   const style = document.createElement("style");
   style.innerHTML = `
+    #kaufbot-teaser,
+    #kaufbot-panel-loader-sphere {
+      width: 112px;
+      height: 112px;
+    }
+
     #kaufbot-teaser {
       position: fixed;
       right: 42px;
       bottom: 52px;
-      width: 112px;
-      height: 112px;
       z-index: 999999;
       opacity: 0;
       transform: translateY(16px) scale(0.96);
@@ -116,7 +110,7 @@
       pointer-events: none;
     }
 
-    #kaufbot-teaser-core {
+    .kaufbot-sphere-core {
       position: absolute;
       inset: 0;
       border-radius: 999px;
@@ -128,7 +122,7 @@
       overflow: hidden;
     }
 
-    #kaufbot-teaser-core::before {
+    .kaufbot-sphere-core::before {
       content: "";
       position: absolute;
       inset: 10px;
@@ -136,7 +130,7 @@
       border: 1px solid rgba(255,255,255,0.18);
     }
 
-    #kaufbot-teaser-core::after {
+    .kaufbot-sphere-core::after {
       content: "";
       position: absolute;
       inset: 22px;
@@ -145,7 +139,7 @@
       filter: blur(1px);
     }
 
-    #kaufbot-teaser-ring {
+    .kaufbot-sphere-ring {
       position: absolute;
       inset: 8px;
       border-radius: 999px;
@@ -157,7 +151,7 @@
       animation: kaufbotTeaserSpin 1.8s linear infinite;
     }
 
-    #kaufbot-teaser-ring-2 {
+    .kaufbot-sphere-ring-2 {
       position: absolute;
       inset: 18px;
       border-radius: 999px;
@@ -169,7 +163,7 @@
       animation: kaufbotTeaserSpinReverse 2.6s linear infinite;
     }
 
-    #kaufbot-teaser-dot {
+    .kaufbot-sphere-dot {
       position: absolute;
       width: 14px;
       height: 14px;
@@ -184,13 +178,14 @@
       animation: kaufbotTeaserPulse 1.9s ease-in-out infinite;
     }
 
-    #kaufbot-teaser-label {
+    #kaufbot-teaser-label,
+    #kaufbot-panel-loader-label {
       position: absolute;
       left: 50%;
       bottom: -24px;
       transform: translateX(-50%);
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: rgba(17,17,17,0.72);
@@ -292,7 +287,7 @@
       background: transparent;
       pointer-events: none;
       opacity: 0;
-      transition: opacity 0.15s ease;
+      transition: opacity 0.2s ease;
     }
 
     #kaufbot-agent-frame.ready,
@@ -306,28 +301,20 @@
       display: none;
       align-items: center;
       justify-content: center;
-      flex-direction: column;
-      gap: 14px;
-      font-size: 14px;
-      font-weight: 700;
-      color: #111;
       z-index: 3;
       pointer-events: none;
-      background: rgba(255,255,255,0.04);
-      backdrop-filter: blur(2px);
     }
 
     #kaufbot-floating-wrap.loading #kaufbot-panel-loader {
       display: flex;
     }
 
-    .kaufbot-panel-spinner {
-      width: 46px;
-      height: 46px;
-      border-radius: 999px;
-      border: 3px solid rgba(0,0,0,0.12);
-      border-top-color: rgba(0,0,0,0.75);
-      animation: kaufbotTeaserSpin 0.9s linear infinite;
+    #kaufbot-panel-loader-sphere {
+      position: relative;
+    }
+
+    #kaufbot-floating-wrap.loading #kaufbot-agent-frame {
+      opacity: 0;
     }
 
     #kaufbot-close {
@@ -351,12 +338,16 @@
       bottom: 18px;
       left: 50%;
       transform: translateX(-50%);
-      display: flex;
+      display: none;
       flex-direction: column;
       align-items: center;
       gap: 8px;
       z-index: 4;
       pointer-events: auto;
+    }
+
+    #kaufbot-floating-wrap.ready #kaufbot-controls {
+      display: flex;
     }
 
     .kaufbot-mini-btn {
@@ -414,7 +405,13 @@
         height: 84px;
       }
 
-      #kaufbot-teaser-label {
+      #kaufbot-panel-loader-sphere {
+        width: 84px;
+        height: 84px;
+      }
+
+      #kaufbot-teaser-label,
+      #kaufbot-panel-loader-label {
         font-size: 10px;
         bottom: -20px;
       }
@@ -442,16 +439,20 @@
   `;
   document.head.appendChild(style);
 
+  function sphereHTML(label) {
+    return `
+      <div class="kaufbot-sphere-core">
+        <div class="kaufbot-sphere-ring"></div>
+        <div class="kaufbot-sphere-ring-2"></div>
+        <div class="kaufbot-sphere-dot"></div>
+      </div>
+      <div id="${label === "Loading KaufBot" ? "kaufbot-teaser-label" : "kaufbot-panel-loader-label"}">${label}</div>
+    `;
+  }
+
   const teaser = document.createElement("div");
   teaser.id = "kaufbot-teaser";
-  teaser.innerHTML = `
-    <div id="kaufbot-teaser-core">
-      <div id="kaufbot-teaser-ring"></div>
-      <div id="kaufbot-teaser-ring-2"></div>
-      <div id="kaufbot-teaser-dot"></div>
-    </div>
-    <div id="kaufbot-teaser-label">Loading KaufBot</div>
-  `;
+  teaser.innerHTML = sphereHTML("Loading KaufBot");
 
   const launcher = document.createElement("div");
   launcher.id = "kaufbot-launcher";
@@ -465,8 +466,9 @@
     <button id="kaufbot-close" aria-label="Close">×</button>
 
     <div id="kaufbot-panel-loader">
-      <div class="kaufbot-panel-spinner"></div>
-      <div>Getting KaufBot ready…</div>
+      <div id="kaufbot-panel-loader-sphere">
+        ${sphereHTML("Getting KaufBot ready")}
+      </div>
     </div>
 
     <div id="kaufbot-stage-shell"></div>
@@ -493,6 +495,7 @@
   let currentSuggestedUrl = "";
   let destroyTimer = null;
   let loadingFallbackTimer = null;
+  let pendingGreeting = false;
   let hasPlayedGreeting = hasPlayedGreetingThisSession;
   let launcherShown = hasSeenTeaserThisSession;
 
@@ -560,6 +563,23 @@
     mounted = true;
   }
 
+  function playGreetingIfReady() {
+    const frame = document.getElementById("kaufbot-agent-frame");
+
+    if (
+      wrap.classList.contains("visible") &&
+      agentReady &&
+      !hasPlayedGreeting &&
+      frame &&
+      frame.contentWindow
+    ) {
+      hasPlayedGreeting = true;
+      pendingGreeting = false;
+      sessionStorage.setItem(SESSION_KEYS.greetingPlayed, "1");
+      frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
+    }
+  }
+
   function openKaufbot() {
     if (destroyTimer) {
       clearTimeout(destroyTimer);
@@ -584,8 +604,11 @@
 
     wrap.classList.add("visible");
     wrap.classList.add("loading");
+    wrap.classList.remove("ready");
     teaser.classList.add("hidden");
     launcher.classList.add("hidden");
+
+    pendingGreeting = !hasPlayedGreeting;
 
     if (!mounted) {
       mountAgent();
@@ -605,19 +628,16 @@
 
     if (agentReady) {
       wrap.classList.remove("loading");
+      wrap.classList.add("ready");
       frame?.classList.add("ready");
-
-      if (!hasPlayedGreeting && frame && frame.contentWindow) {
-        hasPlayedGreeting = true;
-        sessionStorage.setItem(SESSION_KEYS.greetingPlayed, "1");
-        frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
-      }
+      playGreetingIfReady();
     } else {
       frame?.classList.remove("ready");
 
       loadingFallbackTimer = setTimeout(() => {
         wrap.classList.remove("loading");
-      }, 10000);
+        wrap.classList.add("ready");
+      }, 12000);
     }
   }
 
@@ -630,7 +650,9 @@
 
     wrap.classList.remove("visible");
     wrap.classList.remove("loading");
+    wrap.classList.remove("ready");
     micLive = false;
+    pendingGreeting = false;
 
     startBtn.textContent = "Start talking";
     hideSuggestedLink();
@@ -673,7 +695,7 @@
 
   startBtn.addEventListener("click", () => {
     const frame = document.getElementById("kaufbot-agent-frame");
-    if (!frame || !frame.contentWindow) return;
+    if (!frame || !frame.contentWindow || !agentReady) return;
 
     if (!micLive) {
       micLive = true;
@@ -712,36 +734,26 @@
     }
 
     if (event.data.type === "KAUFBOT_READY") {
-  agentReady = true;
+      agentReady = true;
+      wrap.classList.remove("loading");
+      wrap.classList.add("ready");
 
-  wrap.classList.remove("loading");
+      if (loadingFallbackTimer) {
+        clearTimeout(loadingFallbackTimer);
+        loadingFallbackTimer = null;
+      }
 
-  if (loadingFallbackTimer) {
-    clearTimeout(loadingFallbackTimer);
-    loadingFallbackTimer = null;
-  }
+      const frame = document.getElementById("kaufbot-agent-frame");
+      frame?.classList.add("ready");
 
-  const frame = document.getElementById("kaufbot-agent-frame");
-  frame?.classList.add("ready");
+      if (pendingGreeting) {
+        setTimeout(() => {
+          playGreetingIfReady();
+        }, 300);
+      }
 
-  // 🔥 THIS is what you were missing
-  if (
-    wrap.classList.contains("visible") &&
-    !hasPlayedGreeting &&
-    frame &&
-    frame.contentWindow
-  ) {
-    hasPlayedGreeting = true;
-    sessionStorage.setItem(SESSION_KEYS.greetingPlayed, "1");
-
-    frame.contentWindow.postMessage(
-      { type: "KAUFBOT_PLAY_GREETING" },
-      "*"
-    );
-  }
-
-  return;
-}
+      return;
+    }
 
     if (event.data.type === "KAUFBOT_SUGGEST_LINK") {
       showSuggestedLink(event.data);
