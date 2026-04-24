@@ -344,7 +344,7 @@
   );
 
   await sendProductReply(
-    "Clicki is one of Click Backdrops’ most innovative studio accessories. You can use it as one piece, vertically, or as three individual adjustable reflector panels that can be moved, locked, and held at different angles without the arms slipping. It is designed to give photographers a flexible, space-saving way to control light and shape a setup quickly."
+    "CLICKI is Click Backdrops’ portable photographic backdrop holder. It is designed to make backdrop setup quicker, easier, and more space-saving, especially in studios or on location. It uses a single stand setup, lets photographers extend and lock the holder to the height they need, and securely holds compatible CLICKI backdrops without extra clamps or tools. Just worth noting, the lighting stand is not included, and CLICKI-ready backdrops are sold separately."
   );
 
   isProcessingProductReply = false;
