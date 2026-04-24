@@ -526,7 +526,7 @@
     linkBtn.classList.remove("visible");
   }
 
-    function mountAgent() {
+      function mountAgent() {
     if (mounted) return;
 
     const pageContext = buildPageContext();
@@ -545,58 +545,26 @@
     mounted = true;
   }
 
-  // IMPORTANT:
   // Do NOT call mountAgent() here.
-  // The Tavus conversation must only start when the visitor clicks to open KaufBot.
+  // It must only run after the visitor clicks KaufBot.
 
   function openKaufbot() {
-  if (destroyTimer) {
-    clearTimeout(destroyTimer);
-    destroyTimer = null;
-  }
-
-  // 🔥 FORCE fresh mount if iframe missing
-  const existingFrame = document.getElementById("kaufbot-agent-frame");
-
-  if (!existingFrame) {
-    mounted = false;
-  }
-
-  if (!mounted) {
-    mountAgent();
-  }
-
-  startBtn.textContent = "Start talking";
-  hideSuggestedLink();
-
-  wrap.classList.add("visible");
-  teaser.classList.add("hidden");
-  launcher.classList.add("hidden");
-
-  const frame = document.getElementById("kaufbot-agent-frame");
-
-  if (frame && frame.contentWindow) {
-    frame.contentWindow.postMessage({ type: "KAUFBOT_PANEL_OPENED" }, "*");
-  }
-
-  if (visualReady) {
-    frame?.classList.add("visual-ready");
-  } else {
-    frame?.classList.remove("visual-ready");
-  }
-
-  if (agentReady) {
-    frame?.classList.add("ready");
-
-    if (!hasPlayedGreeting && frame && frame.contentWindow) {
-      hasPlayedGreeting = true;
-      sessionStorage.setItem(SESSION_KEYS.greetingPlayed, "1");
-      frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
+    if (destroyTimer) {
+      clearTimeout(destroyTimer);
+      destroyTimer = null;
     }
-  } else {
-    frame?.classList.remove("ready");
-  }
-}
+
+    const existingFrame = document.getElementById("kaufbot-agent-frame");
+
+    if (!existingFrame) {
+      mounted = false;
+      visualReady = false;
+      agentReady = false;
+    }
+
+    if (!mounted) {
+      mountAgent();
+    }
 
     startBtn.textContent = "Start talking";
     hideSuggestedLink();
