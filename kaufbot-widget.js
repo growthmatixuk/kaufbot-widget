@@ -92,7 +92,7 @@
       position: fixed;
       right: 42px;
       bottom: 52px;
-      z-index: 999999;
+      z-index: 2147483647;
       opacity: 0;
       transform: translateY(16px) scale(0.96);
       pointer-events: none;
@@ -212,7 +212,7 @@
       position: fixed;
       right: 28px;
       bottom: 28px;
-      z-index: 999999;
+      z-index: 2147483647;
       cursor: pointer;
       opacity: 0;
       transform: translateY(22px) scale(0.97);
@@ -258,7 +258,7 @@
       bottom: 24px;
       width: 460px;
       height: 620px;
-      z-index: 999998;
+      z-index: 2147483646;
       pointer-events: none;
       opacity: 0;
       transform: translateY(20px) scale(0.98);
