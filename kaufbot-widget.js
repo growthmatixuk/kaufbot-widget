@@ -496,7 +496,7 @@
   let destroyTimer = null;
   let loadingFallbackTimer = null;
   let pendingGreeting = false;
-  let hasPlayedGreeting = hasPlayedGreetingThisSession;
+  let hasPlayedGreeting = false;
   let launcherShown = hasSeenTeaserThisSession;
 
   function buildPageContext() {
@@ -575,7 +575,6 @@
     ) {
       hasPlayedGreeting = true;
       pendingGreeting = false;
-      sessionStorage.setItem(SESSION_KEYS.greetingPlayed, "1");
       frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
     }
   }
