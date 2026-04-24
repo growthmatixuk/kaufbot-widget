@@ -550,14 +550,53 @@
   // The Tavus conversation must only start when the visitor clicks to open KaufBot.
 
   function openKaufbot() {
-    if (destroyTimer) {
-      clearTimeout(destroyTimer);
-      destroyTimer = null;
-    }
+  if (destroyTimer) {
+    clearTimeout(destroyTimer);
+    destroyTimer = null;
+  }
 
-    if (!mounted) {
-      mountAgent();
+  // 🔥 FORCE fresh mount if iframe missing
+  const existingFrame = document.getElementById("kaufbot-agent-frame");
+
+  if (!existingFrame) {
+    mounted = false;
+  }
+
+  if (!mounted) {
+    mountAgent();
+  }
+
+  startBtn.textContent = "Start talking";
+  hideSuggestedLink();
+
+  wrap.classList.add("visible");
+  teaser.classList.add("hidden");
+  launcher.classList.add("hidden");
+
+  const frame = document.getElementById("kaufbot-agent-frame");
+
+  if (frame && frame.contentWindow) {
+    frame.contentWindow.postMessage({ type: "KAUFBOT_PANEL_OPENED" }, "*");
+  }
+
+  if (visualReady) {
+    frame?.classList.add("visual-ready");
+  } else {
+    frame?.classList.remove("visual-ready");
+  }
+
+  if (agentReady) {
+    frame?.classList.add("ready");
+
+    if (!hasPlayedGreeting && frame && frame.contentWindow) {
+      hasPlayedGreeting = true;
+      sessionStorage.setItem(SESSION_KEYS.greetingPlayed, "1");
+      frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
     }
+  } else {
+    frame?.classList.remove("ready");
+  }
+}
 
     startBtn.textContent = "Start talking";
     hideSuggestedLink();
