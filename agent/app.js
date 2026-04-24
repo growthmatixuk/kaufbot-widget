@@ -53,6 +53,18 @@
       .trim();
   }
 
+function formatSizeForSpeech(size) {
+  if (!size) return "that size";
+
+  return String(size)
+    .toLowerCase()
+    .replace(/(\d+)\s*ft/g, (_, n) => `${n} feet`)
+    .replace(/(\d+)ft/g, (_, n) => `${n} feet`)
+    .replace(/x/g, " by ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+  
   function formatPriceForSpeech(price) {
     if (price === null || price === undefined || price === "" || Number.isNaN(Number(price))) {
       return "price unavailable";
@@ -678,8 +690,10 @@
     const variant = first.variant || {};
     const lowerText = (userText || "").toLowerCase();
 
-    const readableSize =
-      variant.size_imperial || variant.size_metric || variant.size_label || "that size";
+    const rawSize =
+  variant.size_imperial || variant.size_metric || variant.size_label;
+
+const readableSize = formatSizeForSpeech(rawSize);
 
     const firstPrice = formatPriceForSpeech(variant.price_gbp);
 
