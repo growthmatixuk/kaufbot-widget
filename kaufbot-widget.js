@@ -1,6 +1,7 @@
 (function () {
-  if (window.__kaufbotLoaded) return;
-  window.__kaufbotLoaded = true;
+  function bootKaufbot() {
+    if (window.__kaufbotLoaded) return;
+    window.__kaufbotLoaded = true;
 
   const blockedPaths = ["/cart", "/checkout", "/my-account"];
   const currentPath = location.pathname.toLowerCase();
@@ -779,5 +780,11 @@
   } else {
     teaser.classList.add("hidden");
     launcher.classList.add("visible");
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootKaufbot);
+  } else {
+    bootKaufbot();
   }
 })();
