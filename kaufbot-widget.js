@@ -431,14 +431,21 @@
 
   const wrap = document.createElement("div");
   wrap.id = "kaufbot-floating-wrap";
-  wrap.innerHTML = `
-    <button id="kaufbot-close" aria-label="Close">×</button>
-    <div id="kaufbot-stage-shell"></div>
-    <div id="kaufbot-controls">
-      <button class="kaufbot-mini-btn" id="kaufbot-link-btn"></button>
-      <button class="kaufbot-mini-btn" id="kaufbot-start-btn">Start talking</button>
-    </div>
-  `;
+ wrap.innerHTML = `
+  <button id="kaufbot-close" aria-label="Close">×</button>
+
+  <div id="kaufbot-panel-loader">
+    <div class="kaufbot-panel-spinner"></div>
+    <div>Getting KaufBot ready…</div>
+  </div>
+
+  <div id="kaufbot-stage-shell"></div>
+
+  <div id="kaufbot-controls">
+    <button class="kaufbot-mini-btn" id="kaufbot-link-btn"></button>
+    <button class="kaufbot-mini-btn" id="kaufbot-start-btn">Start talking</button>
+  </div>
+`;
 
   document.body.appendChild(teaser);
   document.body.appendChild(launcher);
@@ -546,6 +553,7 @@
     wrap.classList.add("visible");
     teaser.classList.add("hidden");
     launcher.classList.add("hidden");
+    wrap.classList.add("loading")
 
     const frame = document.getElementById("kaufbot-agent-frame");
 
@@ -659,8 +667,13 @@
     if (event.data.type === "KAUFBOT_READY") {
       agentReady = true;
 
+      wrap.classList.remove("loading");
+
       const frame = document.getElementById("kaufbot-agent-frame");
       frame?.classList.add("ready");
+
+       showLauncherWhenReady();
+}
 
       if (
         wrap.classList.contains("visible") &&
