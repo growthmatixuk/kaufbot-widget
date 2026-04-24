@@ -345,6 +345,22 @@ function formatSizeForSpeech(size) {
 
           console.log("USER SAID:", text);
 
+if (
+  text.includes("what sizes") ||
+  text.includes("which sizes") ||
+  text.includes("what size") ||
+  text.includes("available sizes") ||
+  text.includes("sizes can you do") ||
+  text.includes("sizes do you do") ||
+  text.includes("what sizes do you have")
+) {
+  await sendProductReply(
+    "Click Backdrops offers a wide range of sizes depending on the backdrop type. Common options include 5 feet by 5 feet, 5 feet by 7 feet, 5 feet by 8 feet, 7 feet by 7 feet, 7 feet by 9.5 feet, 8 feet by 8 feet, 8 feet by 12 feet, 10 feet by 8 feet, and larger floor sweep options. Some custom sizes are available too, up to 3 metres wide or 3 metres drop. For larger widths, the drop is usually limited to 3 metres."
+  );
+
+  return;
+}
+          
           if (
   text.includes("clicki") ||
   text.includes("clicky") ||
