@@ -295,7 +295,7 @@
         }
       });
 
-      call.on("app-message", (event) => {
+      call.on("app-message", async (event) => {
         try {
           const payload = event?.data || event;
           if (!payload) return;
