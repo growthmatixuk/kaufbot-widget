@@ -782,6 +782,8 @@
     launcher.classList.add("visible");
   }
 
+  }
+
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", bootKaufbot);
   } else {
