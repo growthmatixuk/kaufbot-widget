@@ -703,20 +703,33 @@
   window.addEventListener("message", async (event) => {
     if (!event.data) return;
 
-    if (event.data.type === "KAUFBOT_PLAY_GREETING" && call && joined) {
-      console.log("PLAY_GREETING received");
+    if (event.data.type === "KAUFBOT_PLAY_GREETING") {
+  console.log("PLAY_GREETING received");
 
-      if (hiddenAudio) {
-        hiddenAudio.muted = false;
-        hiddenAudio.volume = 1;
-        hiddenAudio.play().catch(() => {});
+  const tryPlayGreeting = async (attempt = 1) => {
+    if (!call || !joined) {
+      if (attempt <= 10) {
+        setTimeout(() => tryPlayGreeting(attempt + 1), 300);
+      } else {
+        console.warn("Greeting failed: call not ready");
       }
-
-      micMuted = true;
-      await call.setLocalAudio(false);
-      await sendWelcomeMessage();
       return;
     }
+
+    if (hiddenAudio) {
+      hiddenAudio.muted = false;
+      hiddenAudio.volume = 1;
+      hiddenAudio.play().catch(() => {});
+    }
+
+    micMuted = true;
+    await call.setLocalAudio(false);
+    await sendWelcomeMessage();
+  };
+
+  await tryPlayGreeting();
+  return;
+}
 
     if (event.data.type === "KAUFBOT_START_TALKING" && call && joined) {
       conversationActivated = true;
