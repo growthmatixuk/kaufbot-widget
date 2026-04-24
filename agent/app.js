@@ -333,6 +333,24 @@
 
           console.log("USER SAID:", text);
 
+          if (
+  text.includes("clicki") ||
+  text.includes("clicky") ||
+  text.includes("click ee")
+) {
+  window.parent.postMessage(
+    { type: "KAUFBOT_SUGGEST_LINK", slug: "clicki" },
+    "*"
+  );
+
+  await sendProductReply(
+    "Clicki is one of Click Backdrops’ most innovative studio accessories. You can use it as one piece, vertically, or as three individual adjustable reflector panels that can be moved, locked, and held at different angles without the arms slipping. It is designed to give photographers a flexible, space-saving way to control light and shape a setup quickly."
+  );
+
+  isProcessingProductReply = false;
+  return;
+}
+
           if (!isProcessingProductReply) {
             isProcessingProductReply = true;
 
