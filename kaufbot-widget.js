@@ -1,14 +1,18 @@
 (function () {
   if (window.__kaufbotLoaded) return;
   window.__kaufbotLoaded = true;
-
-return;
   
   const blockedPaths = [
     "/cart",
     "/checkout",
     "/my-account"
   ];
+
+    const ua = navigator.userAgent.toLowerCase();
+  const isBot =
+    /bot|crawl|spider|slurp|facebookexternalhit|preview|headless|wget|curl/.test(ua);
+
+  if (isBot) return;
 
   const currentPath = location.pathname.toLowerCase();
 
@@ -522,7 +526,7 @@ return;
     linkBtn.classList.remove("visible");
   }
 
-  function mountAgent() {
+    function mountAgent() {
     if (mounted) return;
 
     const pageContext = buildPageContext();
@@ -534,13 +538,16 @@ return;
       new URLSearchParams({
         context: JSON.stringify(pageContext)
       }).toString();
+
     iframe.allow = "camera; microphone; autoplay; fullscreen; display-capture";
 
     shell.appendChild(iframe);
     mounted = true;
   }
 
-  mountAgent();
+  // IMPORTANT:
+  // Do NOT call mountAgent() here.
+  // The Tavus conversation must only start when the visitor clicks to open KaufBot.
 
   function openKaufbot() {
     if (destroyTimer) {
