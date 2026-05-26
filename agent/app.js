@@ -675,6 +675,26 @@ if (
     }
   }
 
+  async function sendTypedUserMessage(text) {
+    if (!call || !sessionData?.conversation_id || !text) return;
+
+    const interaction = {
+      message_type: "conversation",
+      event_type: "conversation.respond",
+      conversation_id: sessionData.conversation_id,
+      properties: {
+        text
+      }
+    };
+
+    try {
+      console.log("Sending typed user message:", text);
+      call.sendAppMessage(interaction, "*");
+    } catch (err) {
+      console.warn("Failed to send typed user message", err);
+    }
+  }
+
   async function fetchProductContext(message) {
     try {
       const response = await fetch("https://growthmatixuk-kaufbot-widget.vercel.app/api/product-context", {
@@ -816,6 +836,21 @@ const readableSize = formatSizeForSpeech(rawSize);
         await sendSpokenLine(START_TALKING_TEXT);
       }
 
+      return;
+    }
+
+    if (event.data.type === "KAUFBOT_TYPED_MESSAGE" && call && joined) {
+      const typedText = String(event.data.text || "").trim();
+
+      if (!typedText) return;
+
+      if (hiddenAudio) {
+        hiddenAudio.muted = false;
+        hiddenAudio.volume = 1;
+        hiddenAudio.play().catch(() => {});
+      }
+
+      await sendTypedUserMessage(typedText);
       return;
     }
 
