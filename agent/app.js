@@ -880,4 +880,4 @@ const readableSize = formatSizeForSpeech(rawSize);
       await leaveKaufBot();
     }
   });
-})();.
+})();
