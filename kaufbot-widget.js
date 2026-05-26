@@ -384,6 +384,44 @@
       animation: kaufbotPulse 2.5s ease-in-out infinite;
     }
 
+
+    #kaufbot-text-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 300px;
+      max-width: 90vw;
+    }
+
+    #kaufbot-text-input {
+      flex: 1;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.94);
+      color: #111;
+      font-size: 14px;
+      outline: none;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.14);
+    }
+
+    #kaufbot-send-btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 14px;
+      background: rgba(0,0,0,0.86);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.16);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    #kaufbot-send-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.20);
+    }
+
     #kaufbot-link-btn {
       display: none;
       max-width: 280px;
@@ -477,6 +515,12 @@
 
     <div id="kaufbot-controls">
       <button class="kaufbot-mini-btn" id="kaufbot-link-btn"></button>
+
+      <div id="kaufbot-text-row">
+        <input id="kaufbot-text-input" type="text" placeholder="Type to KaufBot..." />
+        <button id="kaufbot-send-btn">Send</button>
+      </div>
+
       <button class="kaufbot-mini-btn" id="kaufbot-start-btn">Start talking</button>
     </div>
   `;
@@ -489,6 +533,8 @@
   const closeBtn = wrap.querySelector("#kaufbot-close");
   const startBtn = wrap.querySelector("#kaufbot-start-btn");
   const linkBtn = wrap.querySelector("#kaufbot-link-btn");
+  const textInput = wrap.querySelector("#kaufbot-text-input");
+  const sendBtn = wrap.querySelector("#kaufbot-send-btn");
 
   let mounted = false;
   let visualReady = false;
@@ -544,6 +590,24 @@
     currentSuggestedUrl = "";
     linkBtn.textContent = "";
     linkBtn.classList.remove("visible");
+  }
+
+  function sendTypedMessage() {
+    const frame = document.getElementById("kaufbot-agent-frame");
+    const text = String(textInput?.value || "").trim();
+
+    if (!frame || !frame.contentWindow || !agentReady || !text) return;
+
+    frame.contentWindow.postMessage(
+      {
+        type: "KAUFBOT_TYPED_MESSAGE",
+        text
+      },
+      "*"
+    );
+
+    textInput.value = "";
+    textInput?.focus();
   }
 
   function mountAgent() {
@@ -719,6 +783,15 @@
   linkBtn.addEventListener("click", () => {
     if (!currentSuggestedUrl) return;
     window.location.href = currentSuggestedUrl;
+  });
+
+  sendBtn.addEventListener("click", sendTypedMessage);
+
+  textInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      sendTypedMessage();
+    }
   });
 
   window.addEventListener("message", (event) => {
