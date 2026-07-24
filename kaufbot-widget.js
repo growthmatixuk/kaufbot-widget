@@ -217,6 +217,17 @@
       right: 28px;
       bottom: 28px;
       z-index: 2147483647;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 18px 10px 10px;
+      background: rgba(20,20,20,0.94);
+      color: #fff;
+      box-shadow: 0 14px 34px rgba(0,0,0,0.24);
+      font-family: Arial, sans-serif;
+      text-align: left;
       cursor: pointer;
       opacity: 0;
       transform: translateY(22px) scale(0.97);
@@ -236,18 +247,46 @@
       transform: translateY(10px) scale(0.97);
     }
 
-    #kaufbot-launcher img {
-      width: 400px;
-      max-width: 42vw;
-      height: auto;
-      display: block;
-      pointer-events: none;
-      filter: drop-shadow(0 10px 25px rgba(0,0,0,0.18));
+    #kaufbot-launcher-icon {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      flex: 0 0 48px;
+      border-radius: 999px;
+      background: #fff;
+      color: #111;
+      font-size: 24px;
+      font-weight: 900;
       animation: kaufbotFloat 5s ease-in-out infinite;
+    }
+
+    #kaufbot-launcher-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+
+    #kaufbot-launcher-copy strong {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    #kaufbot-launcher-copy span {
+      color: rgba(255,255,255,0.78);
+      font-size: 12px;
+      font-weight: 600;
     }
 
     #kaufbot-launcher:hover {
       transform: translateY(-6px) scale(1.03);
+    }
+
+    #kaufbot-launcher:focus-visible {
+      outline: 3px solid rgba(17,17,17,0.28);
+      outline-offset: 3px;
     }
 
     @keyframes kaufbotFloat {
@@ -506,10 +545,14 @@
       #kaufbot-launcher {
         right: 12px;
         bottom: 12px;
+        padding: 8px 14px 8px 8px;
       }
 
-      #kaufbot-launcher img {
-        width: 180px;
+      #kaufbot-launcher-icon {
+        width: 42px;
+        height: 42px;
+        flex-basis: 42px;
+        font-size: 21px;
       }
 
       #kaufbot-floating-wrap {
@@ -541,10 +584,16 @@
   teaser.id = "kaufbot-teaser";
   teaser.innerHTML = sphereHTML("Loading KaufBot");
 
-  const launcher = document.createElement("div");
+  const launcher = document.createElement("button");
   launcher.id = "kaufbot-launcher";
+  launcher.type = "button";
+  launcher.setAttribute("aria-label", "Open KaufBot");
   launcher.innerHTML = `
-    <img src="https://i.postimg.cc/zXKCMfrh/I-m-Kauf-Bot-Click-to-talk-to-me.png" alt="Talk to KaufBot" />
+    <span id="kaufbot-launcher-icon" aria-hidden="true">K</span>
+    <span id="kaufbot-launcher-copy">
+      <strong>I’m KaufBot</strong>
+      <span>Click to talk to me</span>
+    </span>
   `;
 
   const wrap = document.createElement("div");
@@ -604,6 +653,7 @@
   let hasPlayedGreeting = false;
   let launcherShown = hasSeenTeaserThisSession;
   let unavailable = false;
+  let audioBlocked = false;
 
   function buildPageContext() {
     return {
@@ -673,6 +723,7 @@
     agentReady = false;
     visualReady = false;
     micLive = false;
+    audioBlocked = false;
     pendingGreeting = false;
 
     if (loadingFallbackTimer) {
@@ -733,6 +784,7 @@
   function openKaufbot() {
   hasPlayedGreeting = false;
   pendingGreeting = true;
+  audioBlocked = false;
 
   if (destroyTimer) {
     clearTimeout(destroyTimer);
@@ -824,6 +876,7 @@
     wrap.classList.remove("loading");
     wrap.classList.remove("ready");
     micLive = false;
+    audioBlocked = false;
     pendingGreeting = false;
 
     startBtn.textContent = "Start talking";
@@ -871,6 +924,16 @@
   startBtn.addEventListener("click", () => {
     const frame = document.getElementById("kaufbot-agent-frame");
     if (!frame || !frame.contentWindow || !agentReady) return;
+
+    if (audioBlocked) {
+      audioBlocked = false;
+      frame.contentWindow.postMessage(
+        { type: "KAUFBOT_ENABLE_AUDIO" },
+        AGENT_ORIGIN
+      );
+      startBtn.textContent = micLive ? "Mute mic" : "Start talking";
+      return;
+    }
 
     if (!micLive) {
       micLive = true;
@@ -975,6 +1038,12 @@
         micLive = false;
         startBtn.textContent = "Start talking";
       }
+      return;
+    }
+
+    if (event.data.type === "KAUFBOT_AUDIO_BLOCKED") {
+      audioBlocked = true;
+      startBtn.textContent = "Enable sound";
       return;
     }
 
