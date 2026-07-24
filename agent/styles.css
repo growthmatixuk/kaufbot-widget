@@ -27,10 +27,10 @@ html, body {
 
 #agent-canvas {
   position: absolute;
-  bottom: 0;
+  bottom: 105px;
   left: 50%;
   width: auto;
-  height: 78%;
+  height: 76.5%;
   transform: translateX(-48%) scale(1.00);
   transform-origin: bottom center;
   display: block;
@@ -40,10 +40,10 @@ html, body {
 
 #kaufbot-logo {
   position: absolute;
-  width: 19px;
+  width: 22px;
   height: auto;
-  left: 73%;
-  top: 65%;
+  left: 70%;
+  top: 63%;
   transform: translate(-50%, -50%);
   opacity: 0;
 transition: opacity 0.25s ease;
