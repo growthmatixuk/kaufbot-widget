@@ -768,6 +768,7 @@
     if (
       wrap.classList.contains("visible") &&
       agentReady &&
+      visualReady &&
       !hasPlayedGreeting &&
       frame &&
       frame.contentWindow
@@ -994,6 +995,12 @@
           loadingFallbackTimer = null;
         }
       }
+
+      if (pendingGreeting && agentReady) {
+        setTimeout(() => {
+          playGreetingIfReady();
+        }, 600);
+      }
       return;
     }
 
@@ -1016,7 +1023,7 @@
       if (pendingGreeting) {
         setTimeout(() => {
           playGreetingIfReady();
-        }, 300);
+        }, 600);
       }
 
       return;
