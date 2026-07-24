@@ -36,6 +36,9 @@
   let conversationActivated = false;
   let isProcessingProductReply = false;
   let hasPlayedStartTalkingIntro = false;
+  let parentPanelOpen = false;
+
+  const PARENT_SOURCE = window.parent;
 
   const WELCOME_TEXT =
     "Hi, I’m KoffBot! Welcome to Click Backdrops… Click 'Start talking' and let’s chat.";
@@ -75,7 +78,7 @@ function formatSizeForSpeech(size) {
 
   function markReady() {
     if (kaufbotReady) return;
-    if (!videoStreamReady || !audioStreamReady) return;
+    if (!videoStreamReady) return;
 
     kaufbotReady = true;
 
@@ -92,9 +95,41 @@ function formatSizeForSpeech(size) {
       loading.remove();
     }
 
-    if (!sentReadyMessage && window.parent !== window) {
-      sentReadyMessage = true;
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: "KAUFBOT_VISUAL_READY" }, "*");
+    }
+  }
+
+  function markInteractiveReady() {
+    if (sentReadyMessage || !joined) return;
+
+    sentReadyMessage = true;
+
+    if (window.parent !== window) {
       window.parent.postMessage({ type: "KAUFBOT_READY" }, "*");
+    }
+  }
+
+  function reportUnavailable(error, phase) {
+    const message = String(error?.message || error || "KaufBot is unavailable");
+    const lowerMessage = message.toLowerCase();
+    const overloaded =
+      lowerMessage.includes("concurrent") ||
+      lowerMessage.includes("capacity") ||
+      lowerMessage.includes("limit") ||
+      lowerMessage.includes("maximum") ||
+      lowerMessage.includes("overload");
+
+    if (window.parent !== window) {
+      window.parent.postMessage(
+        {
+          type: "KAUFBOT_OVERLOADED",
+          overloaded,
+          phase,
+          message
+        },
+        "*"
+      );
     }
   }
 
@@ -232,7 +267,6 @@ function formatSizeForSpeech(size) {
       hiddenAudio.volume = 1;
       hiddenAudio.play().catch(console.warn);
       audioStreamReady = true;
-      markReady();
     }
   }
 
@@ -588,8 +622,9 @@ if (
       });
     } catch (err) {
       console.error(err);
+      reportUnavailable(err, "start");
       if (loading) {
-        loading.textContent = "Could not start KaufBot.";
+        loading.textContent = "KaufBot is hibernating. Please check back soon.";
       }
     }
   }
@@ -609,10 +644,13 @@ if (
 
       joined = true;
       await call.setLocalAudio(false);
+      markInteractiveReady();
+      markReady();
     } catch (err) {
       console.error("Join error:", err);
+      reportUnavailable(err, "join");
       if (loading) {
-        loading.textContent = "Could not join KaufBot.";
+        loading.textContent = "KaufBot is hibernating. Please check back soon.";
       }
     }
   }
@@ -643,7 +681,9 @@ if (
       event_type: "conversation.echo",
       conversation_id: sessionData.conversation_id,
       properties: {
-        text: WELCOME_TEXT
+        modality: "text",
+        text: WELCOME_TEXT,
+        done: true
       }
     };
 
@@ -663,7 +703,9 @@ if (
       event_type: "conversation.echo",
       conversation_id: sessionData.conversation_id,
       properties: {
-        text
+        modality: "text",
+        text,
+        done: true
       }
     };
 
@@ -772,7 +814,9 @@ const readableSize = formatSizeForSpeech(rawSize);
       event_type: "conversation.echo",
       conversation_id: sessionData.conversation_id,
       properties: {
-        text
+        modality: "text",
+        text,
+        done: true
       }
     };
 
@@ -784,24 +828,45 @@ const readableSize = formatSizeForSpeech(rawSize);
     }
   }
 
-  await initKaufBot();
-  await joinKaufBot();
-
   window.addEventListener("message", async (event) => {
     if (!event.data) return;
+    if (event.source !== PARENT_SOURCE) return;
 
-    if (event.data.type === "KAUFBOT_PLAY_GREETING") {
-      console.log("PLAY_GREETING received");
+    try {
+      if (event.data.type === "KAUFBOT_PLAY_GREETING") {
+        console.log("PLAY_GREETING received");
 
-      const tryPlayGreeting = async (attempt = 1) => {
-        if (!call || !joined) {
-          if (attempt <= 10) {
-            setTimeout(() => tryPlayGreeting(attempt + 1), 300);
-          } else {
-            console.warn("Greeting failed: call not ready");
+        const tryPlayGreeting = async (attempt = 1) => {
+          if (!call || !joined) {
+            if (attempt <= 40) {
+              setTimeout(() => tryPlayGreeting(attempt + 1), 250);
+            } else {
+              console.warn("Greeting failed: call not ready");
+              reportUnavailable("Greeting timed out while joining", "greeting");
+            }
+            return;
           }
-          return;
-        }
+
+          if (hiddenAudio) {
+            hiddenAudio.muted = false;
+            hiddenAudio.volume = 1;
+            hiddenAudio.play().catch(() => {});
+          }
+
+          micMuted = true;
+          await call.setLocalAudio(false);
+          await sendWelcomeMessage();
+        };
+
+        await tryPlayGreeting();
+        return;
+      }
+
+      if (event.data.type === "KAUFBOT_START_TALKING") {
+        if (!call || !joined) return;
+
+        conversationActivated = true;
+        micMuted = false;
 
         if (hiddenAudio) {
           hiddenAudio.muted = false;
@@ -809,75 +874,93 @@ const readableSize = formatSizeForSpeech(rawSize);
           hiddenAudio.play().catch(() => {});
         }
 
+        await call.setLocalAudio(true);
+
+        if (window.parent !== window) {
+          window.parent.postMessage(
+            { type: "KAUFBOT_MIC_STATE", muted: false },
+            "*"
+          );
+        }
+
+        if (!hasPlayedStartTalkingIntro) {
+          hasPlayedStartTalkingIntro = true;
+          console.log("Sending start talking intro");
+          await sendSpokenLine(START_TALKING_TEXT);
+        }
+
+        return;
+      }
+
+      if (event.data.type === "KAUFBOT_TYPED_MESSAGE") {
+        if (!call || !joined) return;
+
+        const typedText = String(event.data.text || "").trim();
+        if (!typedText) return;
+
+        if (hiddenAudio) {
+          hiddenAudio.muted = false;
+          hiddenAudio.volume = 1;
+          hiddenAudio.play().catch(() => {});
+        }
+
+        await sendTypedUserMessage(typedText);
+        return;
+      }
+
+      if (event.data.type === "KAUFBOT_TOGGLE_MIC") {
+        if (!call || !joined) return;
+
+        micMuted = !!event.data.muted;
+        await call.setLocalAudio(!micMuted);
+
+        if (window.parent !== window) {
+          window.parent.postMessage(
+            { type: "KAUFBOT_MIC_STATE", muted: micMuted },
+            "*"
+          );
+        }
+        return;
+      }
+
+      if (event.data.type === "KAUFBOT_PANEL_CLOSED") {
+        parentPanelOpen = false;
+
+        if (hiddenAudio) {
+          hiddenAudio.muted = true;
+        }
+
         micMuted = true;
-        await call.setLocalAudio(false);
-        await sendWelcomeMessage();
-      };
-
-      await tryPlayGreeting();
-      return;
-    }
-
-    if (event.data.type === "KAUFBOT_START_TALKING" && call && joined) {
-      conversationActivated = true;
-      micMuted = false;
-
-      if (hiddenAudio) {
-        hiddenAudio.muted = false;
-        hiddenAudio.volume = 1;
-        hiddenAudio.play().catch(() => {});
+        if (call && joined) {
+          await call.setLocalAudio(false);
+        }
+        return;
       }
 
-      await call.setLocalAudio(true);
-
-      if (!hasPlayedStartTalkingIntro) {
-        hasPlayedStartTalkingIntro = true;
-        console.log("Sending start talking intro");
-        await sendSpokenLine(START_TALKING_TEXT);
+      if (event.data.type === "KAUFBOT_PANEL_OPENED") {
+        parentPanelOpen = true;
+        return;
       }
 
-      return;
-    }
-
-    if (event.data.type === "KAUFBOT_TYPED_MESSAGE" && call && joined) {
-      const typedText = String(event.data.text || "").trim();
-
-      if (!typedText) return;
-
-      if (hiddenAudio) {
-        hiddenAudio.muted = false;
-        hiddenAudio.volume = 1;
-        hiddenAudio.play().catch(() => {});
+      if (event.data.type === "KAUFBOT_CLOSE_SELF") {
+        await leaveKaufBot();
       }
+    } catch (err) {
+      console.error("KaufBot command failed:", err);
 
-      await sendTypedUserMessage(typedText);
-      return;
-    }
-
-    if (event.data.type === "KAUFBOT_TOGGLE_MIC" && call && joined) {
-      micMuted = !!event.data.muted;
-      await call.setLocalAudio(!micMuted);
-      return;
-    }
-
-    if (event.data.type === "KAUFBOT_PANEL_CLOSED") {
-      if (hiddenAudio) {
-        hiddenAudio.muted = true;
+      if (window.parent !== window) {
+        window.parent.postMessage(
+          {
+            type: "KAUFBOT_COMMAND_ERROR",
+            command: event.data.type,
+            message: String(err?.message || err)
+          },
+          "*"
+        );
       }
-
-      micMuted = true;
-      if (call && joined) {
-        await call.setLocalAudio(false);
-      }
-      return;
-    }
-
-    if (event.data.type === "KAUFBOT_PANEL_OPENED") {
-      return;
-    }
-
-    if (event.data.type === "KAUFBOT_CLOSE_SELF") {
-      await leaveKaufBot();
     }
   });
+
+  await initKaufBot();
+  await joinKaufBot();
 })();

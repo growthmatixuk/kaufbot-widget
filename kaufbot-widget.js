@@ -12,6 +12,8 @@
 
     window.__kaufbotLoaded = "active";
 
+  const AGENT_ORIGIN = "https://growthmatixuk-kaufbot-widget.vercel.app";
+
   const SESSION_KEYS = {
     teaserSeen: "kaufbot_teaser_seen",
     greetingPlayed: "kaufbot_greeting_played"
@@ -282,6 +284,51 @@
       pointer-events: none;
     }
 
+    #kaufbot-unavailable {
+      position: absolute;
+      inset: 54px 24px 32px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    #kaufbot-unavailable-card {
+      width: min(340px, calc(100% - 24px));
+      padding: 30px 26px;
+      border-radius: 24px;
+      color: #fff;
+      text-align: center;
+      background: rgba(20, 20, 20, 0.92);
+      box-shadow: 0 20px 55px rgba(0,0,0,0.28);
+      backdrop-filter: blur(14px);
+    }
+
+    #kaufbot-unavailable-title {
+      margin: 0 0 12px;
+      font-size: 25px;
+      line-height: 1.15;
+      font-weight: 800;
+    }
+
+    #kaufbot-unavailable-text {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.55;
+      color: rgba(255,255,255,0.9);
+    }
+
+    #kaufbot-floating-wrap.unavailable #kaufbot-unavailable {
+      display: flex;
+    }
+
+    #kaufbot-floating-wrap.unavailable #kaufbot-agent-frame,
+    #kaufbot-floating-wrap.unavailable #kaufbot-controls,
+    #kaufbot-floating-wrap.unavailable #kaufbot-panel-loader {
+      display: none;
+    }
+
     #kaufbot-agent-frame {
       width: 100%;
       height: 100%;
@@ -513,15 +560,25 @@
 
     <div id="kaufbot-stage-shell"></div>
 
+    <div id="kaufbot-unavailable" role="status" aria-live="polite">
+      <div id="kaufbot-unavailable-card">
+        <h2 id="kaufbot-unavailable-title">KaufBot is hibernating</h2>
+        <p id="kaufbot-unavailable-text">
+          KaufBot is a little overworked right now and is hibernating.
+          Please check back soon.
+        </p>
+      </div>
+    </div>
+
     <div id="kaufbot-controls">
       <button class="kaufbot-mini-btn" id="kaufbot-link-btn"></button>
 
       <div id="kaufbot-text-row">
-        <input id="kaufbot-text-input" type="text" placeholder="Type to KaufBot..." />
-        <button id="kaufbot-send-btn">Send</button>
+        <input id="kaufbot-text-input" type="text" placeholder="Type to KaufBot..." aria-label="Type a message to KaufBot" />
+        <button id="kaufbot-send-btn" type="button">Send</button>
       </div>
 
-      <button class="kaufbot-mini-btn" id="kaufbot-start-btn">Start talking</button>
+      <button class="kaufbot-mini-btn" id="kaufbot-start-btn" type="button">Start talking</button>
     </div>
   `;
 
@@ -546,6 +603,7 @@
   let pendingGreeting = false;
   let hasPlayedGreeting = false;
   let launcherShown = hasSeenTeaserThisSession;
+  let unavailable = false;
 
   function buildPageContext() {
     return {
@@ -603,11 +661,35 @@
         type: "KAUFBOT_TYPED_MESSAGE",
         text
       },
-      "*"
+      AGENT_ORIGIN
     );
 
     textInput.value = "";
     textInput?.focus();
+  }
+
+  function showUnavailable() {
+    unavailable = true;
+    agentReady = false;
+    visualReady = false;
+    micLive = false;
+    pendingGreeting = false;
+
+    if (loadingFallbackTimer) {
+      clearTimeout(loadingFallbackTimer);
+      loadingFallbackTimer = null;
+    }
+
+    startBtn.textContent = "Start talking";
+    hideSuggestedLink();
+    wrap.classList.remove("loading");
+    wrap.classList.remove("ready");
+    wrap.classList.add("unavailable");
+  }
+
+  function clearUnavailable() {
+    unavailable = false;
+    wrap.classList.remove("unavailable");
   }
 
   function mountAgent() {
@@ -641,11 +723,14 @@
     ) {
       hasPlayedGreeting = true;
       pendingGreeting = false;
-      frame.contentWindow.postMessage({ type: "KAUFBOT_PLAY_GREETING" }, "*");
+      frame.contentWindow.postMessage(
+        { type: "KAUFBOT_PLAY_GREETING" },
+        AGENT_ORIGIN
+      );
     }
   }
 
- function openKaufbot() {
+  function openKaufbot() {
   hasPlayedGreeting = false;
   pendingGreeting = true;
 
@@ -659,7 +744,19 @@
       loadingFallbackTimer = null;
     }
 
-    const existingFrame = document.getElementById("kaufbot-agent-frame");
+    let existingFrame = document.getElementById("kaufbot-agent-frame");
+
+    if (unavailable && existingFrame) {
+      existingFrame.contentWindow?.postMessage(
+        { type: "KAUFBOT_CLOSE_SELF" },
+        AGENT_ORIGIN
+      );
+      existingFrame.remove();
+      existingFrame = null;
+      mounted = false;
+    }
+
+    clearUnavailable();
 
     if (!existingFrame) {
       mounted = false;
@@ -685,7 +782,10 @@
     const frame = document.getElementById("kaufbot-agent-frame");
 
     if (frame && frame.contentWindow) {
-      frame.contentWindow.postMessage({ type: "KAUFBOT_PANEL_OPENED" }, "*");
+      frame.contentWindow.postMessage(
+        { type: "KAUFBOT_PANEL_OPENED" },
+        AGENT_ORIGIN
+      );
     }
 
     if (visualReady) {
@@ -703,9 +803,10 @@
       frame?.classList.remove("ready");
 
       loadingFallbackTimer = setTimeout(() => {
-        wrap.classList.remove("loading");
-        wrap.classList.add("ready");
-      }, 12000);
+        if (!agentReady || !visualReady) {
+          showUnavailable();
+        }
+      }, 30000);
     }
   }
 
@@ -713,7 +814,10 @@
     const frame = document.getElementById("kaufbot-agent-frame");
 
     if (frame && frame.contentWindow) {
-      frame.contentWindow.postMessage({ type: "KAUFBOT_PANEL_CLOSED" }, "*");
+      frame.contentWindow.postMessage(
+        { type: "KAUFBOT_PANEL_CLOSED" },
+        AGENT_ORIGIN
+      );
     }
 
     wrap.classList.remove("visible");
@@ -741,7 +845,10 @@
       const frameToDestroy = document.getElementById("kaufbot-agent-frame");
 
       if (frameToDestroy && frameToDestroy.contentWindow) {
-        frameToDestroy.contentWindow.postMessage({ type: "KAUFBOT_CLOSE_SELF" }, "*");
+        frameToDestroy.contentWindow.postMessage(
+          { type: "KAUFBOT_CLOSE_SELF" },
+          AGENT_ORIGIN
+        );
       }
 
       setTimeout(() => {
@@ -767,7 +874,10 @@
 
     if (!micLive) {
       micLive = true;
-      frame.contentWindow.postMessage({ type: "KAUFBOT_START_TALKING" }, "*");
+      frame.contentWindow.postMessage(
+        { type: "KAUFBOT_START_TALKING" },
+        AGENT_ORIGIN
+      );
       startBtn.textContent = "Mute mic";
       return;
     }
@@ -775,7 +885,7 @@
     micLive = !micLive;
     frame.contentWindow.postMessage(
       { type: "KAUFBOT_TOGGLE_MIC", muted: !micLive },
-      "*"
+      AGENT_ORIGIN
     );
     startBtn.textContent = micLive ? "Mute mic" : "Unmute mic";
   });
@@ -797,6 +907,10 @@
   window.addEventListener("message", (event) => {
     if (!event.data) return;
 
+    const frame = document.getElementById("kaufbot-agent-frame");
+    if (!frame || event.source !== frame.contentWindow) return;
+    if (event.origin !== AGENT_ORIGIN) return;
+
     if (event.data.type === "KAUFBOT_DEBUG_APP_MESSAGE") {
       console.log("KAUFBOT DEBUG APP MESSAGE:", event.data.payload);
       return;
@@ -805,23 +919,36 @@
     if (event.data.type === "KAUFBOT_VISUAL_READY") {
       visualReady = true;
 
-      const frame = document.getElementById("kaufbot-agent-frame");
       frame?.classList.add("visual-ready");
+
+      if (agentReady) {
+        clearUnavailable();
+        wrap.classList.remove("loading");
+        wrap.classList.add("ready");
+
+        if (loadingFallbackTimer) {
+          clearTimeout(loadingFallbackTimer);
+          loadingFallbackTimer = null;
+        }
+      }
       return;
     }
 
     if (event.data.type === "KAUFBOT_READY") {
       agentReady = true;
-      wrap.classList.remove("loading");
+      clearUnavailable();
       wrap.classList.add("ready");
 
-      if (loadingFallbackTimer) {
-        clearTimeout(loadingFallbackTimer);
-        loadingFallbackTimer = null;
-      }
-
-      const frame = document.getElementById("kaufbot-agent-frame");
       frame?.classList.add("ready");
+
+      if (visualReady) {
+        wrap.classList.remove("loading");
+
+        if (loadingFallbackTimer) {
+          clearTimeout(loadingFallbackTimer);
+          loadingFallbackTimer = null;
+        }
+      }
 
       if (pendingGreeting) {
         setTimeout(() => {
@@ -829,6 +956,30 @@
         }, 300);
       }
 
+      return;
+    }
+
+    if (event.data.type === "KAUFBOT_MIC_STATE") {
+      micLive = !event.data.muted;
+      startBtn.textContent = micLive ? "Mute mic" : "Unmute mic";
+      return;
+    }
+
+    if (event.data.type === "KAUFBOT_COMMAND_ERROR") {
+      console.warn("KaufBot command failed:", event.data.message);
+
+      if (
+        event.data.command === "KAUFBOT_START_TALKING" ||
+        event.data.command === "KAUFBOT_TOGGLE_MIC"
+      ) {
+        micLive = false;
+        startBtn.textContent = "Start talking";
+      }
+      return;
+    }
+
+    if (event.data.type === "KAUFBOT_OVERLOADED") {
+      showUnavailable();
       return;
     }
 
