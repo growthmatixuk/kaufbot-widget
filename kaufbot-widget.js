@@ -299,8 +299,8 @@
       position: fixed;
       right: 24px;
       bottom: 24px;
-      width: 460px;
-      height: 620px;
+      width: 340px;
+      height: 400px;
       z-index: 2147483646;
       pointer-events: none;
       opacity: 0;
@@ -407,10 +407,10 @@
 
     #kaufbot-close {
       position: absolute;
-      top: 14px;
-      right: 8px;
-      width: 38px;
-      height: 38px;
+      top: 8px;
+      right: 6px;
+      width: 34px;
+      height: 34px;
       border: 0;
       border-radius: 999px;
       background: rgba(0,0,0,.82);
@@ -423,7 +423,7 @@
 
     #kaufbot-controls {
       position: absolute;
-      bottom: 18px;
+      bottom: 10px;
       left: 50%;
       transform: translateX(-50%);
       display: none;
@@ -556,8 +556,8 @@
       }
 
       #kaufbot-floating-wrap {
-        width: 320px;
-        height: 520px;
+        width: 300px;
+        height: 380px;
         right: 8px;
         bottom: 8px;
       }
