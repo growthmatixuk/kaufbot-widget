@@ -43,7 +43,7 @@ html, body {
   width: 22px;
   height: auto;
   left: 70%;
-  top: 63%;
+  top: 38%;
   transform: translate(-50%, -50%);
   opacity: 0;
 transition: opacity 0.25s ease;
