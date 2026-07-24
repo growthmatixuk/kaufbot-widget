@@ -37,6 +37,7 @@
   let isProcessingProductReply = false;
   let hasPlayedStartTalkingIntro = false;
   let parentPanelOpen = false;
+  let audioPlaybackEnabled = false;
 
   const PARENT_SOURCE = window.parent;
 
@@ -130,6 +131,39 @@ function formatSizeForSpeech(size) {
         },
         "*"
       );
+    }
+  }
+
+  function enableRemoteAudio() {
+    audioPlaybackEnabled = true;
+
+    if (!hiddenAudio) return;
+
+    hiddenAudio.muted = false;
+    hiddenAudio.volume = 1;
+
+    if (hiddenAudio.srcObject) {
+      hiddenAudio.play().catch((err) => {
+        console.warn("Remote audio playback was blocked", err);
+
+        if (window.parent !== window) {
+          window.parent.postMessage(
+            {
+              type: "KAUFBOT_AUDIO_BLOCKED",
+              message: String(err?.message || err)
+            },
+            "*"
+          );
+        }
+      });
+    }
+  }
+
+  function disableRemoteAudio() {
+    audioPlaybackEnabled = false;
+
+    if (hiddenAudio) {
+      hiddenAudio.muted = true;
     }
   }
 
@@ -263,9 +297,21 @@ function formatSizeForSpeech(size) {
 
     if (remoteAudioTrack) {
       hiddenAudio.srcObject = new MediaStream([remoteAudioTrack]);
-      hiddenAudio.muted = true;
+      hiddenAudio.muted = !audioPlaybackEnabled;
       hiddenAudio.volume = 1;
-      hiddenAudio.play().catch(console.warn);
+      hiddenAudio.play().catch((err) => {
+        console.warn("Could not start remote audio track", err);
+
+        if (audioPlaybackEnabled && window.parent !== window) {
+          window.parent.postMessage(
+            {
+              type: "KAUFBOT_AUDIO_BLOCKED",
+              message: String(err?.message || err)
+            },
+            "*"
+          );
+        }
+      });
       audioStreamReady = true;
     }
   }
@@ -318,7 +364,8 @@ function formatSizeForSpeech(size) {
 
       logoEl = document.createElement("img");
       logoEl.id = "kaufbot-logo";
-      logoEl.src = "https://i.postimg.cc/PPCXFF2y/click-backdrops-logo-white-r.png";
+      logoEl.src = "/assets/click-backdrops-logo-white.png";
+      logoEl.alt = "";
 
       stage.innerHTML = "";
       stage.appendChild(hiddenVideo);
@@ -658,6 +705,7 @@ if (
   async function leaveKaufBot() {
     if (animationId) cancelAnimationFrame(animationId);
     resetReadyState();
+    disableRemoteAudio();
 
     try {
       if (call && joined) {
@@ -847,11 +895,7 @@ const readableSize = formatSizeForSpeech(rawSize);
             return;
           }
 
-          if (hiddenAudio) {
-            hiddenAudio.muted = false;
-            hiddenAudio.volume = 1;
-            hiddenAudio.play().catch(() => {});
-          }
+          enableRemoteAudio();
 
           micMuted = true;
           await call.setLocalAudio(false);
@@ -868,11 +912,7 @@ const readableSize = formatSizeForSpeech(rawSize);
         conversationActivated = true;
         micMuted = false;
 
-        if (hiddenAudio) {
-          hiddenAudio.muted = false;
-          hiddenAudio.volume = 1;
-          hiddenAudio.play().catch(() => {});
-        }
+        enableRemoteAudio();
 
         await call.setLocalAudio(true);
 
@@ -898,11 +938,7 @@ const readableSize = formatSizeForSpeech(rawSize);
         const typedText = String(event.data.text || "").trim();
         if (!typedText) return;
 
-        if (hiddenAudio) {
-          hiddenAudio.muted = false;
-          hiddenAudio.volume = 1;
-          hiddenAudio.play().catch(() => {});
-        }
+        enableRemoteAudio();
 
         await sendTypedUserMessage(typedText);
         return;
@@ -923,12 +959,15 @@ const readableSize = formatSizeForSpeech(rawSize);
         return;
       }
 
+      if (event.data.type === "KAUFBOT_ENABLE_AUDIO") {
+        enableRemoteAudio();
+        return;
+      }
+
       if (event.data.type === "KAUFBOT_PANEL_CLOSED") {
         parentPanelOpen = false;
 
-        if (hiddenAudio) {
-          hiddenAudio.muted = true;
-        }
+        disableRemoteAudio();
 
         micMuted = true;
         if (call && joined) {
