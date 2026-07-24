@@ -42,8 +42,8 @@ html, body {
   position: absolute;
   width: 22px;
   height: auto;
-  left: 70%;
-  top: 38%;
+  left: 68.5%;
+  top: 42%;
   transform: translate(-50%, -50%);
   opacity: 0;
 transition: opacity 0.25s ease;
