@@ -300,7 +300,7 @@
       right: 24px;
       bottom: 24px;
       width: 340px;
-      height: 400px;
+      height: 470px;
       z-index: 2147483646;
       pointer-events: none;
       opacity: 0;
@@ -557,7 +557,7 @@
 
       #kaufbot-floating-wrap {
         width: 300px;
-        height: 380px;
+        height: 445px;
         right: 8px;
         bottom: 8px;
       }
